@@ -11,6 +11,7 @@ migration to kubernetes from https://github.com/hans-m-song/server-stack
 - [ ] prometheus + graphana
 
 ## Potential Features
+- [ ] ci/cd to deploy this repo on changes
 - [ ] calibre server
 - [ ] wikipedia mirror
 - [ ] steam server
