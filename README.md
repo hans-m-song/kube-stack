@@ -8,10 +8,13 @@ migration to kubernetes from https://github.com/hans-m-song/server-stack
 - [ ] dlna or plex or something similar
 - [ ] deluge
 - [ ] discord bot
+
+## Housekeeping
+- [ ] ci/cd to deploy this repo on changes
 - [ ] prometheus + graphana
+- [ ] ectd snapshot backups
 
 ## Potential Features
-- [ ] ci/cd to deploy this repo on changes
 - [ ] calibre server
 - [ ] wikipedia mirror
 - [ ] steam server
