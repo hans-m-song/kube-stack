@@ -1,0 +1,134 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pihole
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pihole-secret
+  namespace: pihole
+type: Opaque
+data:
+  WEBPASSWORD: UGlob2xlQDEyMzQ1Cg==
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pihole-etc-pvc
+  namespace: pihole
+spec:
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pihole-dnsmasq-pvc
+  namespace: pihole
+spec:
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 500Mi
+  accessModes:
+  - ReadWriteOnce
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole-deployment
+  namespace: pihole
+  labels:
+    app: pihole
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pihole
+  template:
+    metadata:
+      labels:
+        app: pihole
+    spec:
+      containers:
+      - name: pihole
+        image: pihole/pihole
+        env:
+        - name: TZ
+          value: Australia/Brisbane
+        - name: WEBPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pihole-secret
+              key: WEBPASSWORD
+        ports:
+        - containerPort: 53
+        - containerPort: 53
+        - containerPort: 67
+        - containerPort: 547
+        - containerPort: 80
+        volumeMounts:
+        - name: pihole-etc
+          mountPath: /etc/pihole
+        - name: pihole-dnsmasq
+          mountPath: /etc/dnsmasq.d
+        # TODO override setupVars to set WEBPASSWORD
+      volumes:
+      - name: pihole-etc
+        persistentVolumeClaim:
+          claimName: pihole-etc-pvc
+      - name: pihole-dnsmasq
+        persistentVolumeClaim:
+          claimName: pihole-dnsmasq-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-svc
+  namespace: pihole
+  labels:
+    app: pihole
+spec:
+  selector:
+    app: pihole
+  ports:
+  - name: ftl-dns-tcp
+    protocol: TCP
+    port: 53
+  - name: ftl-dns-udp
+    protocol: UDP
+    port: 53
+  - name: ftl-dhcp
+    port: 67
+    protocol: UDP
+  - name: ftl-dhcp-v6
+    port: 547
+    protocol: UDP
+  - name: lighttpd
+    port: 80
+    protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pihole-ingress
+  namespace: pihole
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /pihole(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: pihole-svc
+            port:
+              number: 80
