@@ -13,6 +13,15 @@ data:
   WEBPASSWORD: UGlob2xlQDEyMzQ1Cg==
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-config
+  namespace: pihole
+data:
+  TZ: Australia/Brisbane
+  PIHOLE_DNS: 8.8.8.8;8.8.4.4
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: pihole-etc-pvc
@@ -55,17 +64,26 @@ spec:
       labels:
         app: pihole
     spec:
+      restartPolicy: Always
       containers:
       - name: pihole
         image: pihole/pihole
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - sh
+              - -c
+              - pihole -a -p $WEBPASSWORD
         env:
-        - name: TZ
-          value: Australia/Brisbane
         - name: WEBPASSWORD
           valueFrom:
             secretKeyRef:
               name: pihole-secret
               key: WEBPASSWORD
+        envFrom:
+        - configMapRef:
+            name: pihole-config
         ports:
         - containerPort: 53
         - containerPort: 53
@@ -77,7 +95,6 @@ spec:
           mountPath: /etc/pihole
         - name: pihole-dnsmasq
           mountPath: /etc/dnsmasq.d
-        # TODO override setupVars to set WEBPASSWORD
       volumes:
       - name: pihole-etc
         persistentVolumeClaim:
