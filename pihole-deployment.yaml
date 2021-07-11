@@ -137,15 +137,15 @@ metadata:
   namespace: pihole
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-  - http:
+  - host: pihole.192.168.1.42.nip.io
+    http:
       paths:
-      - path: /pihole(/|$)(.*)
+      - path: /
         pathType: Prefix
         backend:
           service:
             name: pihole-svc
             port:
-              number: 80
+              name: lighttpd
