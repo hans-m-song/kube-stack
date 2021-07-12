@@ -64,10 +64,9 @@ spec:
       labels:
         app: pihole
     spec:
-      restartPolicy: Always
       containers:
       - name: pihole
-        image: pihole/pihole
+        image: pihole/pihole:v5.8.1
         lifecycle:
           postStart:
             exec:
@@ -97,6 +96,10 @@ spec:
         - containerPort: 443
           name: https
           protocol: TCP
+        - containerPort: 67
+          name: dhcp
+          protocol: UDP
+        - containerPort: 67
         volumeMounts:
         - name: pihole-etc
           mountPath: /etc/pihole
@@ -118,6 +121,7 @@ metadata:
   labels:
     app: pihole
 spec:
+  type: ClusterIP
   selector:
     app: pihole
   ports:
@@ -133,12 +137,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: pihole-svc-dns
+  name: pihole-svc-dns-tcp
   namespace: pihole
   labels:
     app: pihole
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
 spec:
-  type: NodePort
+  type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     app: pihole
   ports:
@@ -146,9 +153,45 @@ spec:
     port: 53
     targetPort: dns-tcp
     protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-svc-dns-udp
+  namespace: pihole
+  labels:
+    app: pihole
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: pihole
+  ports:
   - name: dns-udp
     port: 53
     targetPort: dns-udp
+    protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-svc-dhcp
+  namespace: pihole
+  labels:
+    app: pihole
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: pihole
+  ports:
+  - name: dhcp
+    port: 67
+    targetPort: dhcp
     protocol: UDP
 ---
 apiVersion: networking.k8s.io/v1
@@ -158,13 +201,8 @@ metadata:
   namespace: pihole
   annotations:
     kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
-  tls:
-  - hosts:
-    - pihole.192.168.1.42.nip.io
-    secretName: pihole-cert
-  rules:
+ rules:
   - host: pihole.192.168.1.42.nip.io
     http:
       paths:
