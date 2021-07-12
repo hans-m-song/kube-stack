@@ -120,6 +120,9 @@ metadata:
   namespace: pihole
   labels:
     app: pihole
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+    metallb.universe.tf/address-pool: pihole
 spec:
   type: ClusterIP
   selector:
@@ -143,6 +146,7 @@ metadata:
     app: pihole
   annotations:
     metallb.universe.tf/allow-shared-ip: pihole-svc
+    metallb.universe.tf/address-pool: pihole
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -163,6 +167,7 @@ metadata:
     app: pihole
   annotations:
     metallb.universe.tf/allow-shared-ip: pihole-svc
+    metallb.universe.tf/address-pool: pihole
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -183,6 +188,7 @@ metadata:
     app: pihole
   annotations:
     metallb.universe.tf/allow-shared-ip: pihole-svc
+    metallb.universe.tf/address-pool: pihole
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
