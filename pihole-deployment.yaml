@@ -27,7 +27,7 @@ metadata:
   name: pihole-etc-pvc
   namespace: pihole
 spec:
-  storageClassName: standard
+  storageClassName: ephemeral
   resources:
     requests:
       storage: 1Gi
@@ -40,7 +40,7 @@ metadata:
   name: pihole-dnsmasq-pvc
   namespace: pihole
 spec:
-  storageClassName: standard
+  storageClassName: ephemeral
   resources:
     requests:
       storage: 500Mi
