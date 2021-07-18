@@ -92,7 +92,7 @@ metadata:
   namespace: pihole
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/rewrite-target: /admin/$2
 spec:
   rules:
   - http:
