@@ -88,16 +88,17 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: pihole-ingress
+  name: pihole-ingress-subdomain
   namespace: pihole
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /admin/$2
+    nginx.ingress.kubernetes.io/rewrite-target: /admin/$1
 spec:
   rules:
-  - http:
+  - host: pihole.deep-thought.local
+    http:
       paths:
-      - path: /pihole(/|$)(.*)
+      - path: /(.*)
         pathType: Prefix
         backend:
           service:

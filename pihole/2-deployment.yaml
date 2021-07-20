@@ -54,6 +54,9 @@ spec:
           mountPath: /etc/pihole
         - name: pihole-dnsmasq
           mountPath: /etc/dnsmasq.d
+        - name: pihole-lists
+          mountPath: /etc/pihole/custom.list
+          subPath: custom.list
       volumes:
       - name: pihole-etc
         persistentVolumeClaim:
@@ -61,3 +64,7 @@ spec:
       - name: pihole-dnsmasq
         persistentVolumeClaim:
           claimName: pihole-dnsmasq-pvc
+      - name: pihole-lists
+        configMap:
+          name: pihole-lists
+
