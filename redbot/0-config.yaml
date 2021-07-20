@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redbot
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: discord-token
+  namespace: redbot
+type: Opaque
+data:
+  token: discord oauth2 client secret
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redbot-config
+  namespace: redbot
+data:
+  TZ: Australia/Brisbane
+  PREFIX: ?
