@@ -9,7 +9,7 @@ spec:
     requests:
       storage: 1Gi
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -22,4 +22,4 @@ spec:
     requests:
       storage: 1Gi
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce

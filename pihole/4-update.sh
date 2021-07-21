@@ -15,10 +15,9 @@ for address in $(echo $adlist); do
   "
 done
 
-kubectl exec $pod_name -n pihole -- \
-sqlite3 $db -batch <<EOF
-  $insertions
-  .exit
+kubectl exec $pod_name -n pihole -- sqlite3 $db -batch <<EOF
+$insertions
+.exit
 EOF
 
 kubectl exec $pod_name -n pihole -- pihole -g

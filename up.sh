@@ -17,4 +17,3 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 echo "allowing workloads on master node"
 kubectl taint nodes --all node-role.kubernetes.io/master-
-

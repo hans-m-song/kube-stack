@@ -3,6 +3,7 @@
 migration to kubernetes from https://github.com/hans-m-song/server-stack
 
 ## Features
+
 - [ ] pihole
 - [ ] synology support for persistent volumes
 - [ ] dlna or plex or something similar
@@ -10,11 +11,13 @@ migration to kubernetes from https://github.com/hans-m-song/server-stack
 - [ ] discord bot
 
 ## Housekeeping
+
 - [ ] ci/cd to deploy this repo on changes
 - [ ] prometheus + graphana
 - [ ] ectd snapshot backups
 
 ## Potential Features
+
 - [ ] calibre server
 - [ ] wikipedia mirror
 - [ ] steam server
