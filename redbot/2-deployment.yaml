@@ -30,7 +30,12 @@ spec:
           volumeMounts:
             - name: redbot-data
               mountPath: /data
+            - name: redbot-cogs
+              mountPath: /data/cogs/CogManager/cogs
       volumes:
         - name: redbot-data
           persistentVolumeClaim:
             claimName: redbot-data-pvc
+        - name: redbot-cogs
+          persistentVolumeClaim:
+            claimName: redbot-cogs-pvc
