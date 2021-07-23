@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ddns-update
+  namespace: ddns
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: ddns-updater
+              image: curlimages/curl
+              command:
+                - curl
+                - https://$(USER):$(PASS)@$(DOMAIN)?hostname=$(HOSTNAME)
+              envFrom:
+                - secretRef:
+                    name: ddns-secret
+                - configMapRef:
+                    name: ddns-config
+          restartPolicy: Never
