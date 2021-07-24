@@ -4,11 +4,11 @@ migration to kubernetes from https://github.com/hans-m-song/server-stack
 
 ## Features
 
-- [ ] pihole
+- [x] pihole
 - [ ] synology support for persistent volumes
 - [ ] dlna or plex or something similar
 - [ ] deluge
-- [ ] discord bot
+- [x] discord bot
 
 ## Housekeeping
 
