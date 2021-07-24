@@ -28,4 +28,5 @@ metadata:
   namespace: pihole
 data:
   custom.list: |
-    192.168.1.128 pihole.deep-thought.local
+    192.168.1.43 nas.deep-thought.local
+    192.168.1.250 pihole.deep-thought.local

@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: echo-server
+  name: echo
   labels:
-    app: echo-server
+    app: echo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: echo-server
+      app: echo
   template:
     metadata:
       labels:
-        app: echo-server
+        app: echo
     spec:
       containers:
-      - name: echo-server
-        image: hashicorp/http-echo
-        imagePullPolicy: IfNotPresent
-        args:
-        - -text="hi"
+        - name: echo
+          image: hashicorp/http-echo
+          imagePullPolicy: IfNotPresent
+          args:
+            - -text="hi"
