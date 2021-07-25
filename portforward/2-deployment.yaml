@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portforward
+  namespace: portforward
+spec:
+  selector:
+    matchLabels:
+      app: portforward
+  template:
+    metadata:
+      labels:
+        app: portforward
+    spec:
+      hostNetwork: true
+      containers:
+        - name: portforward-http
+          image: alpine/socat
+          command:
+            - socat
+            - tcp-listen:80,fork,reuseaddr
+            - tcp:$(DESTINATION):80
+          envFrom:
+            - configMapRef:
+                name: portforward-config
+          ports:
+            - containerPort: 80
+              name: http
+        - name: portforward-https
+          image: alpine/socat
+          command:
+            - socat
+            - tcp-listen:443,fork,reuseaddr
+            - tcp:$(DESTINATION):443
+          envFrom:
+            - configMapRef:
+                name: portforward-config
+          ports:
+            - containerPort: 443
+              name: https
