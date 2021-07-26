@@ -18,6 +18,10 @@ spec:
       containers:
         - name: redbot
           image: phasecorex/red-discordbot:audio
+          securityContext:
+            capabilities:
+              add:
+                - SYS_NICE
           envFrom:
             - configMapRef:
                 name: redbot-config
