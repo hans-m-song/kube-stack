@@ -30,7 +30,8 @@ data:
   custom.list: |
     192.168.1.42 ssh.axatol.local
     192.168.1.43 nas.axatol.local
+    192.168.1.128 pihole.axatol.local
     192.168.1.128 axatol.xyz
     192.168.1.128 grafana.axatol.xyz
     192.168.1.128 hello-world.axatol.xyz
-    192.168.1.128 pihole.axatol.local
+    192.168.1.128 registry.axatol.xyz
