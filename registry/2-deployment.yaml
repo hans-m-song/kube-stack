@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: registry
+spec:
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+        - name: registry
+          image: registry:2.7.0
+          command:
+            - /bin/registry
+            - serve
+            - /etc/docker/registry/config.toml
+          envFrom:
+            - configMapRef:
+                name: registry-env
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 5000
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 5000
+          ports:
+            - containerPort: 5000
+              name: service
+              protocol: TCP
+          volumeMounts:
+            - name: registry-data
+              mountPath: /var/lib/registry
+            - name: registry-config
+              mountPath: /etc/docker/registry/config.toml
+              subPath: config.toml
+            - name: registry-htpasswd
+              mountPath: /auth
+              readOnly: true
+      volumes:
+        - name: registry-data
+          persistentVolumeClaim:
+            claimName: registry-data-pvc
+        - name: registry-config
+          configMap:
+            name: registry-config
+        - name: registry-htpasswd
+          secret:
+            secretName: registry-htpasswd
