@@ -1,31 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-world
-  namespace: hello-world
+  name: hello
 spec:
   selector:
     matchLabels:
-      app: hello-world
+      app: hello
   template:
     metadata:
       labels:
-        app: hello-world
+        app: hello
     spec:
       containers:
-        - name: hello-world
+        - name: hello
           image: nginx
-          resources:
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
           ports:
             - containerPort: 80
               name: http
           volumeMounts:
-            - name: nginx-config
+            - name: config
               mountPath: /etc/nginx/conf.d
       volumes:
-        - name: nginx-config
+        - name: config
           configMap:
-            name: nginx-config
+            name: config

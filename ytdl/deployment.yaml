@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment
+spec:
+  selector:
+    matchLabels:
+      app: ytdl
+  template:
+    metadata:
+      labels:
+        app: ytdl
+    spec:
+      containers:
+        - name: ytdl
+          image: tzahi12345/youtubedl-material:nightly
+          ports:
+            - containerPort: 17442
+              name: http
+          envFrom:
+            - configMapRef:
+                name: config
+          volumeMounts:
+            - name: appdata
+              mountPath: /app/appdata
+            - name: users
+              mountPath: /app/users
+            - name: audio
+              mountPath: /app/audio
+            - name: video
+              mountPath: /app/video
+            - name: subscriptions
+              mountPath: /app/subscriptions
+      volumes:
+        - name: appdata
+          hostPath:
+            path: /var/lib/k8s/ytdl/appdata
+            type: DirectoryOrCreate
+        - name: users
+          hostPath:
+            path: /var/lib/k8s/ytdl/users
+            type: DirectoryOrCreate
+        - name: audio
+          hostPath:
+            path: /var/lib/k8s/ytdl/audio
+            type: DirectoryOrCreate
+        - name: video
+          hostPath:
+            path: /var/lib/k8s/ytdl/video
+            type: DirectoryOrCreate
+        - name: subscriptions
+          hostPath:
+            path: /var/lib/k8s/ytdl/subscriptions
+            type: DirectoryOrCreate

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redbot
+  labels:
+    app: redbot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redbot
+  template:
+    metadata:
+      labels:
+        app: redbot
+    spec:
+      containers:
+        - name: redbot
+          image: phasecorex/red-discordbot:audio
+          securityContext:
+            capabilities:
+              add:
+                - SYS_NICE
+          envFrom:
+            - configMapRef:
+                name: config
+            - secretRef:
+                name: token
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          hostPath:
+            path: /var/lib/k8s/redbot
+            type: DirectoryOrCreate

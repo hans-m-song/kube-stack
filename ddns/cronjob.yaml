@@ -1,8 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: ddns-update
-  namespace: ddns
+  name: updater
 spec:
   schedule: "0 0 * * *"
   successfulJobsHistoryLimit: 1
@@ -13,13 +12,13 @@ spec:
         spec:
           restartPolicy: OnFailure
           containers:
-            - name: ddns-updater
+            - name: updater
               image: curlimages/curl
               command:
                 - curl
                 - https://$(USER):$(PASS)@$(ENDPOINT)?hostname=$(HOSTNAME)
               envFrom:
                 - secretRef:
-                    name: ddns-secret
+                    name: credentials
                 - configMapRef:
-                    name: ddns-config
+                    name: config
