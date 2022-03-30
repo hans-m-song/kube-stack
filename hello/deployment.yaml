@@ -19,7 +19,8 @@ spec:
               name: http
           volumeMounts:
             - name: config
-              mountPath: /etc/nginx/conf.d
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
       volumes:
         - name: config
           configMap:

@@ -17,31 +17,23 @@ metadata:
   labels:
     name: hello
   annotations:
-    kubernetes.io/ingress.class: nginx
-    # cert-manager.io/cluster-issuer: letsencrypt-production
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
-  # tls:
-  #   - hosts:
-  #       - hello.axatol.xyz
-  #     secretName: hello-tls
+  tls:
+    - hosts:
+        - hello.k8s.axatol.home
+      secretName: hello-tls
   rules:
-    #   - host: hello.axatol.xyz
-    #     http:
-    #       paths:
-    #         - pathType: Prefix
-    #           path: /
-    #           backend:
-    #             service:
-    #               name: hello-svc
-    #               port:
-    #                 name: http
     - host: hello.k8s.axatol.home
-      http:
+      http: &hello
         paths:
-          - pathType: Prefix
+          - pathType: ImplementationSpecific
             path: /
             backend:
               service:
                 name: svc
                 port:
                   name: http
+    - host: hello.k8s.axatol.xyz
+      http: *hello
