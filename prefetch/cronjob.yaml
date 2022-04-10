@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prefetcher
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: prefetcher
+  namespace: prefetcher
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: huisheng
+              image: public.ecr.aws/t4g8t3e5/huisheng:latest
+              command:
+                - "true"
+            - name: gha-runner
+              image: public.ecr.aws/t4g8t3e5/gha-runner:latest
+              command:
+                - "true"
