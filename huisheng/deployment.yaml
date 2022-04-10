@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: huisheng
+  labels:
+    app: huisheng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: huisheng
+  template:
+    metadata:
+      labels:
+        app: huisheng
+    spec:
+      containers:
+        - name: huisheng
+          image: public.ecr.aws/t4g8t3e5/huisheng:latest
+          securityContext:
+            capabilities:
+              add:
+                - SYS_NICE
+          env:
+            - name: DISCORD_BOT_PREFIX
+              value: ">"
+            - name: CACHE_DIR
+              value: /data
+          envFrom:
+            - secretRef:
+                name: credentials
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          hostPath:
+            path: /var/lib/k8s/huisheng
+            type: DirectoryOrCreate
