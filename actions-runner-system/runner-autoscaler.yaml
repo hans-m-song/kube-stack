@@ -10,7 +10,7 @@ spec:
       amount: 1
       duration: 5m
   minReplicas: 0
-  maxReplicas: 3
+  maxReplicas: 4
 ---
 apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerDeployment
