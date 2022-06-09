@@ -1,0 +1,60 @@
+on:
+  push:
+    branches:
+      - master
+      # TODO remove
+      - cdk8s
+
+jobs:
+  synth:
+    runs-on:
+      - self-hosted
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: yarn install
+      - run: yarn build
+        env:
+          HOSTNAME: ${{ secrets.HOSTNAME }}
+          CACHE_DIR: ${{ secrets.CACHE_DIR }}
+          CERT_MANAGER_EMAIL: ${{ secrets.CERT_MANAGER_EMAIL }}
+      - run: zip -r manifests.zip ./build/*
+      - uses: actions/upload-artifact@v3
+        with:
+          name: manifests.zip
+          path: manifests.zip
+          if-no-files-found: error
+
+  release:
+    runs-on:
+      - self-hosted
+    needs:
+      - synth
+    outputs:
+      release_id: ${{ steps.id.outputs.release_id }}
+      upload_url: ${{ steps.release.outputs.upload_url }}
+    steps:
+      - id: id
+        run: |
+          RELEASE_ID=$( date +"%Y-%m-%d-%H%M" )
+          echo "[Release ${{ steps.id.outputs.release_id }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.id.outputs.release_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "::set-output name=release_id::$RELEASE_ID"
+      - uses: actions/download-artifact@v1
+        with:
+          name: manifests.zip
+      - id: release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.id.outputs.release_id }}
+          release_name: Release ${{ steps.id.outputs.release_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: manifests.zip
+          asset_name: manifests.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
