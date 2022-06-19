@@ -31,3 +31,13 @@ spec:
     spec:
       image: public.ecr.aws/t4g8t3e5/gha-runner:latest
       repository: hans-m-song/huisheng
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: tunes-anywhere-ci
+spec:
+  template:
+    spec:
+      image: public.ecr.aws/t4g8t3e5/gha-runner:latest
+      organization: tunes-anywhere

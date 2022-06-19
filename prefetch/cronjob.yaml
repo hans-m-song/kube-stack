@@ -9,7 +9,8 @@ metadata:
   name: prefetcher
   namespace: prefetcher
 spec:
-  schedule: "*/5 * * * *"
+  # daily
+  schedule: "0 0 * * *"
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 1
   jobTemplate:
