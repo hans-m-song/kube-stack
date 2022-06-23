@@ -37,7 +37,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: hans-m-song/actions/batch-upload-assets@e5425e0010aff5e088630d660abd77f46cce864b
+      - uses: hans-m-song/actions/batch-upload-assets@24be4cf501ac60972d7802e4e3db725889a7c220
         with:
           token: ${{ github.token }}
           file_path: manifests/*
