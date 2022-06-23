@@ -10,7 +10,7 @@ import { CertManagerChart } from "./charts/cert-manager";
 import { config, Image } from "./config";
 import { MinioChart } from "./charts/minio";
 
-const app = new App({ outdir: "build" });
+const app = new App({ outdir: "manifests" });
 
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
