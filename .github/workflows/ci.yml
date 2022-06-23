@@ -1,0 +1,44 @@
+on:
+  push:
+
+jobs:
+  check:
+    runs-on:
+      - self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - run: yarn install
+      - run: yarn lint
+
+  release:
+    runs-on:
+      - self-hosted
+    needs:
+      - check
+    if: github.ref_name == 'master'
+    steps:
+      - uses: actions/checkout@v3
+      - run: yarn install
+      - run: yarn build
+        env:
+          HOSTNAME: ${{ secrets.HOSTNAME }}
+          CACHE_DIR: ${{ secrets.CACHE_DIR }}
+          CERT_MANAGER_EMAIL: ${{ secrets.CERT_MANAGER_EMAIL }}
+      - id: id
+        run: |
+          RELEASE_ID=$( date +"%Y-%m-%d-%H%M" )
+          echo "[Release $RELEASE_ID](${{ github.server_url }}/${{ github.repository }}/releases/tag/$RELEASE_ID)" >> $GITHUB_STEP_SUMMARY
+          echo "::set-output name=release_id::$RELEASE_ID"
+      - id: release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.id.outputs.release_id }}
+          release_name: Release ${{ steps.id.outputs.release_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: hans-m-song/actions/batch-upload-assets@e5425e0010aff5e088630d660abd77f46cce864b
+        with:
+          token: ${{ github.token }}
+          file_path: manifests/*
+          upload_url: ${{ steps.release.outputs.upload_url }}
