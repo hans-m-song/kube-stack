@@ -2,8 +2,6 @@ on:
   push:
     branches:
       - master
-      # TODO remove
-      - cdk8s
 
 jobs:
   release:
