@@ -18,7 +18,9 @@ new ActionsRunnerControllerChart(app, "arc", {
   runnerImage: "public.ecr.aws/t4g8t3e5/gha-runner:latest",
   targets: [
     { repository: "hans-m-song/semantic-release-gha" },
+    { repository: "hans-m-song/semantic-release-mono-test" },
     { repository: "hans-m-song/huisheng" },
+    { repository: "hans-m-song/kube-stack" },
     { organization: "tunes-anywhere" },
   ],
 });
