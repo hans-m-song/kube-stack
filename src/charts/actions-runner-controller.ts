@@ -4,9 +4,9 @@ import {
   HorizontalRunnerAutoscaler,
   RunnerDeployment,
 } from "@/actions.summerwind.dev";
-import { KubeIngress, KubeNamespace } from "@/k8s";
+import { KubeNamespace } from "@/k8s";
 import { config } from "~/config";
-import { Chart } from "~/utils";
+import { Chart, Ingress } from "~/constructs";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
@@ -39,32 +39,14 @@ export class ActionsRunnerControllerChart extends Chart {
       },
     });
 
-    new KubeIngress(this, "ingress", {
-      metadata: {
-        name: "actions-runner-controller",
-        annotations: { "kubernetes.io/ingress.class": "traefik" },
-      },
-      spec: {
-        tls: [{ hosts: [webhookUrl], secretName: "arc-tls" }],
-        rules: [
-          {
-            host: webhookUrl,
-            http: {
-              paths: [
-                {
-                  pathType: "Exact",
-                  path: "/webhook",
-                  backend: {
-                    service: {
-                      name: "actions-runner-controller-github-webhook-server",
-                      port: { name: "http" },
-                    },
-                  },
-                },
-              ],
-            },
-          },
-        ],
+    new Ingress(this, "ingress", { hostName: webhookUrl }).addPath({
+      pathType: "Exact",
+      path: "/webhook",
+      backend: {
+        service: {
+          name: "actions-runner-controller-github-webhook-server",
+          port: { name: "http" },
+        },
       },
     });
 

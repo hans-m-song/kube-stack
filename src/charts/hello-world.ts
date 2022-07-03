@@ -1,15 +1,7 @@
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
-import { ClusterIssuer } from "@/cert-manager.io";
-import {
-  IntOrString,
-  KubeConfigMap,
-  KubeDeployment,
-  KubeIngress,
-  KubeNamespace,
-  KubeService,
-} from "@/k8s";
-import { Chart, slug } from "~/utils";
+import { IntOrString, KubeConfigMap, KubeNamespace, KubeService } from "@/k8s";
+import { Chart, Deployment, Ingress } from "~/constructs";
 
 const nginxConf = `events {
 }
@@ -29,14 +21,14 @@ http {
 
 export interface HelloWorldChartProps extends ChartProps {
   url: string;
-  clusterIssuer: ClusterIssuer;
+  clusterIssuerName: string;
 }
 
 export class HelloWorldChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { url, clusterIssuer, ...props }: HelloWorldChartProps
+    { url, clusterIssuerName, ...props }: HelloWorldChartProps
   ) {
     super(scope, id, props);
     const selector = { app: "hello" };
@@ -46,33 +38,26 @@ export class HelloWorldChart extends Chart {
     });
 
     const config = new KubeConfigMap(this, "config", {
-      data: { "ngnix.conf": nginxConf },
+      data: { "nginx.conf": nginxConf },
     });
 
-    new KubeDeployment(this, "deployment", {
-      spec: {
-        selector: { matchLabels: selector },
-        template: {
-          metadata: { labels: selector },
-          spec: {
-            containers: [
-              {
-                name: "hello-world",
-                image: "nginx",
-                ports: [{ containerPort: 80, name: "http" }],
-                volumeMounts: [
-                  {
-                    name: "config",
-                    mountPath: "/etc/nginx/nginx.conf",
-                    subPath: "nginx.conf",
-                  },
-                ],
-              },
-            ],
-            volumes: [{ name: "config", configMap: { name: config.name } }],
-          },
+    new Deployment(this, "deployment", {
+      selector,
+      containers: [
+        {
+          name: "hello-world",
+          image: "nginx",
+          ports: [{ containerPort: 80, name: "http" }],
+          volumeMounts: [
+            {
+              name: "config",
+              mountPath: "/etc/nginx/nginx.conf",
+              subPath: "nginx.conf",
+            },
+          ],
         },
-      },
+      ],
+      volumes: [{ name: "config", configMap: { name: config.name } }],
     });
 
     const svc = new KubeService(this, "service", {
@@ -88,31 +73,11 @@ export class HelloWorldChart extends Chart {
       },
     });
 
-    new KubeIngress(this, "ingress", {
-      metadata: {
-        annotations: {
-          "kubernetes.io/ingress.class": "traefik",
-          "cert-manager.io/cluster-issuer": clusterIssuer.name,
-        },
-      },
-      spec: {
-        tls: [{ hosts: [url], secretName: slug(url) }],
-        rules: [
-          {
-            host: url,
-            http: {
-              paths: [
-                {
-                  pathType: "ImplementationSpecific",
-                  path: "/",
-                  backend: {
-                    service: { name: svc.name, port: { name: "http" } },
-                  },
-                },
-              ],
-            },
-          },
-        ],
+    new Ingress(this, "ingress", { hostName: url, clusterIssuerName }).addPath({
+      pathType: "ImplementationSpecific",
+      path: "/",
+      backend: {
+        service: { name: svc.name, port: { name: "http" } },
       },
     });
   }

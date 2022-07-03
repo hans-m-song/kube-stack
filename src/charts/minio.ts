@@ -1,18 +1,20 @@
-import { IntOrString, KubeDeployment, KubeNamespace, KubeService } from "@/k8s";
+import { IntOrString, KubeNamespace, KubeService } from "@/k8s";
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
-import { Chart } from "~/utils";
+import { Chart, Deployment, Ingress } from "~/constructs";
 
 interface MinioChartProps extends ChartProps {
+  url: string;
   credentialsSecretName: string;
+  clusterIssuerName: string;
 }
 
 export class MinioChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { credentialsSecretName, ...props }: MinioChartProps
+    { url, credentialsSecretName, clusterIssuerName, ...props }: MinioChartProps
   ) {
     super(scope, id, props);
     const selector = { app: "minio" };
@@ -21,40 +23,30 @@ export class MinioChart extends Chart {
       metadata: { name: this.namespace },
     });
 
-    new KubeDeployment(this, "deployment", {
-      spec: {
-        selector: { matchLabels: selector },
-        template: {
-          metadata: { labels: selector },
-          spec: {
-            containers: [
-              {
-                name: "minio",
-                image: "quay.io/minio/minio",
-                command: ["server", "/data", "--console-address", ":9001"],
-                ports: [
-                  { containerPort: 9000, name: "api" },
-                  { containerPort: 9001, name: "console" },
-                ],
-                envFrom: [{ secretRef: { name: credentialsSecretName } }],
-                volumeMounts: [{ name: "data", mountPath: "/data" }],
-              },
-            ],
-            volumes: [
-              {
-                name: "data",
-                hostPath: {
-                  path: config.cache("minio"),
-                  type: "DirectoryOrCreate",
-                },
-              },
-            ],
-          },
+    new Deployment(this, "deployment", {
+      selector,
+      containers: [
+        {
+          name: "minio",
+          image: "quay.io/minio/minio",
+          args: ["server", "/data", "--console-address", ":9001"],
+          ports: [
+            { containerPort: 9000, name: "api" },
+            { containerPort: 9001, name: "console" },
+          ],
+          envFrom: [{ secretRef: { name: credentialsSecretName } }],
+          volumeMounts: [{ name: "data", mountPath: "/data" }],
         },
-      },
+      ],
+      volumes: [
+        {
+          name: "data",
+          hostPath: { path: config.cache("minio"), type: "DirectoryOrCreate" },
+        },
+      ],
     });
 
-    new KubeService(this, "service", {
+    const svc = new KubeService(this, "service", {
       spec: {
         selector,
         type: "ClusterIP",
@@ -73,6 +65,26 @@ export class MinioChart extends Chart {
       },
     });
 
-    // TODO ingress
+    new Ingress(this, "ingress", {
+      hostName: config.url("minio.k8s"),
+      clusterIssuerName,
+    }).addPath({
+      path: "/",
+      pathType: "ImplementationSpecific",
+      backend: {
+        service: { name: svc.name, port: { name: "console" } },
+      },
+    });
+
+    new Ingress(this, "api-ingress", {
+      hostName: config.url("api.minio.k8s"),
+      clusterIssuerName,
+    }).addPath({
+      path: "/",
+      pathType: "ImplementationSpecific",
+      backend: {
+        service: { name: svc.name, port: { name: "api" } },
+      },
+    });
   }
 }

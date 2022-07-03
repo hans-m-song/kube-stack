@@ -1,7 +1,8 @@
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { KubeCronJob, KubeNamespace } from "@/k8s";
-import { Chart, slug } from "~/utils";
+import { slug } from "~/utils";
+import { Chart } from "~/constructs";
 
 export interface PrefetchChartProps extends ChartProps {
   images: string[];

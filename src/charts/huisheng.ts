@@ -1,7 +1,7 @@
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
-import { KubeDeployment, KubeNamespace } from "@/k8s";
-import { Chart } from "~/utils";
+import { KubeNamespace } from "@/k8s";
+import { Chart, Deployment } from "~/constructs";
 
 export interface HuiShengChartProps extends ChartProps {
   image: string;
@@ -11,8 +11,6 @@ export interface HuiShengChartProps extends ChartProps {
 }
 
 export class HuiShengChart extends Chart {
-  deployment: KubeDeployment;
-
   constructor(
     scope: Construct,
     id: string,
@@ -31,38 +29,30 @@ export class HuiShengChart extends Chart {
       metadata: { name: props.namespace },
     });
 
-    this.deployment = new KubeDeployment(this, "deployment", {
-      spec: {
-        replicas: 1,
-        selector: { matchLabels: selector },
-        template: {
-          metadata: { labels: selector },
-          spec: {
-            containers: [
-              {
-                name: "huisheng",
-                image,
-                securityContext: { capabilities: { add: ["SYS_NICE"] } },
-                env: [
-                  { name: "DISCORD_BOT_PREFIX", value: botPrefix ?? ">" },
-                  { name: "CACHE_DIR", value: "/data" },
-                ],
-                envFrom: [{ secretRef: { name: credentialsSecretName } }],
-                volumeMounts: [{ name: "data", mountPath: "/data" }],
-              },
-            ],
-            volumes: [
-              {
-                name: "data",
-                hostPath: {
-                  path: cachePath,
-                  type: "DirectoryOrCreate",
-                },
-              },
-            ],
+    new Deployment(this, "deployment", {
+      selector,
+      containers: [
+        {
+          name: "huisheng",
+          image,
+          securityContext: { capabilities: { add: ["SYS_NICE"] } },
+          env: [
+            { name: "DISCORD_BOT_PREFIX", value: botPrefix ?? ">" },
+            { name: "CACHE_DIR", value: "/data" },
+          ],
+          envFrom: [{ secretRef: { name: credentialsSecretName } }],
+          volumeMounts: [{ name: "data", mountPath: "/data" }],
+        },
+      ],
+      volumes: [
+        {
+          name: "data",
+          hostPath: {
+            path: cachePath,
+            type: "DirectoryOrCreate",
           },
         },
-      },
+      ],
     });
   }
 }

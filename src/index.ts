@@ -12,6 +12,27 @@ import { MinioChart } from "./charts/minio";
 
 const app = new App({ outdir: "manifests" });
 
+const certManagers = new CertManagerChart(app, "cert-manager", {
+  namespace: "cert-manager",
+  email: config.certManagerEmail,
+});
+
+new DynamicDNSChart(app, "ddns", {
+  namespace: "ddns",
+  credentialsSecretName: "credentials",
+});
+
+new PrefetchChart(app, "prefetch", {
+  namespace: "prefetch",
+  images: Object.values(Image),
+});
+
+new HelloWorldChart(app, "hello-world", {
+  namespace: "hello",
+  url: config.url("hello.k8s"),
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+});
+
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
   webhookUrl: config.url("arc.k8s"),
@@ -27,7 +48,9 @@ new ActionsRunnerControllerChart(app, "arc", {
 
 new MinioChart(app, "minio", {
   namespace: "minio",
+  url: config.url("minio.k8s"),
   credentialsSecretName: "credentials",
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 new HuiShengChart(app, "huisheng", {
@@ -36,26 +59,6 @@ new HuiShengChart(app, "huisheng", {
   image: Image.GHARunner,
   credentialsSecretName: "credentials",
   botPrefix: ">",
-});
-
-new DynamicDNSChart(app, "ddns", {
-  namespace: "ddns",
-  hosts: [config.hostname],
-});
-
-new PrefetchChart(app, "prefetch", {
-  namespace: "prefetch",
-  images: Object.values(Image),
-});
-
-const certManagers = new CertManagerChart(app, "cert-manager", {
-  email: process.env.CERT_MANAGER_EMAIL ?? "",
-});
-
-new HelloWorldChart(app, "hello-world", {
-  namespace: "hello",
-  clusterIssuer: certManagers.clusterIssuerPrd,
-  url: config.url("hello.k8s"),
 });
 
 app.synth();
