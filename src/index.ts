@@ -20,6 +20,7 @@ const certManagers = new CertManagerChart(app, "cert-manager", {
 new DynamicDNSChart(app, "ddns", {
   namespace: "ddns",
   credentialsSecretName: "credentials",
+  targets: [config.url("hello.k8s"), config.url("arc.k8s")],
 });
 
 new PrefetchChart(app, "prefetch", {
@@ -46,7 +47,7 @@ new ActionsRunnerControllerChart(app, "arc", {
   ],
 });
 
-new MinioChart(app, "minio", {
+const minio = new MinioChart(app, "minio", {
   namespace: "minio",
   url: config.url("minio.k8s"),
   credentialsSecretName: "credentials",
@@ -56,9 +57,10 @@ new MinioChart(app, "minio", {
 new HuiShengChart(app, "huisheng", {
   namespace: "huisheng",
   cachePath: config.cache("huisheng"),
-  image: Image.GHARunner,
+  image: Image.Huisheng,
   credentialsSecretName: "credentials",
   botPrefix: ">",
+  minioServiceName: `${minio.svc.name}.${minio.namespace}`,
 });
 
 app.synth();

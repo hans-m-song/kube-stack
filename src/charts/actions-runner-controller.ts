@@ -42,12 +42,8 @@ export class ActionsRunnerControllerChart extends Chart {
     new Ingress(this, "ingress", { hostName: webhookUrl }).addPath({
       pathType: "Exact",
       path: "/webhook",
-      backend: {
-        service: {
-          name: "actions-runner-controller-github-webhook-server",
-          port: { name: "http" },
-        },
-      },
+      name: "actions-runner-controller-github-webhook-server",
+      port: "http",
     });
 
     const cacheDir = "/home/runner/.cache";
@@ -66,6 +62,7 @@ export class ActionsRunnerControllerChart extends Chart {
           spec: {
             template: {
               spec: {
+                dockerMtu: 1400,
                 image: runnerImage,
                 ...(organization && { organization }),
                 ...(repository && { repository }),
@@ -79,7 +76,7 @@ export class ActionsRunnerControllerChart extends Chart {
                   { name: "GOPATH", value: `${cacheDir}/go` },
                   { name: "GOMODCACHE", value: `${cacheDir}/go/pkg/mod` },
                   // node
-                  { name: "YARN_CACHE_FOLDER", value: `${cacheDir}/node/yarn` },
+                  { name: "YARN_CACHE_FOLDER", value: `${cacheDir}/yarn` },
                 ],
                 volumes: [
                   {

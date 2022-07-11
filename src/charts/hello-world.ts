@@ -21,7 +21,7 @@ http {
 
 export interface HelloWorldChartProps extends ChartProps {
   url: string;
-  clusterIssuerName: string;
+  clusterIssuerName?: string;
 }
 
 export class HelloWorldChart extends Chart {
@@ -74,11 +74,9 @@ export class HelloWorldChart extends Chart {
     });
 
     new Ingress(this, "ingress", { hostName: url, clusterIssuerName }).addPath({
-      pathType: "ImplementationSpecific",
       path: "/",
-      backend: {
-        service: { name: svc.name, port: { name: "http" } },
-      },
+      name: svc.name,
+      port: "http",
     });
   }
 }

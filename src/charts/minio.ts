@@ -7,10 +7,12 @@ import { Chart, Deployment, Ingress } from "~/constructs";
 interface MinioChartProps extends ChartProps {
   url: string;
   credentialsSecretName: string;
-  clusterIssuerName: string;
+  clusterIssuerName?: string;
 }
 
 export class MinioChart extends Chart {
+  svc: KubeService;
+
   constructor(
     scope: Construct,
     id: string,
@@ -46,7 +48,7 @@ export class MinioChart extends Chart {
       ],
     });
 
-    const svc = new KubeService(this, "service", {
+    const svc = (this.svc = new KubeService(this, "service", {
       spec: {
         selector,
         type: "ClusterIP",
@@ -63,28 +65,16 @@ export class MinioChart extends Chart {
           },
         ],
       },
-    });
+    }));
 
     new Ingress(this, "ingress", {
-      hostName: config.url("minio.k8s"),
+      hostName: url,
       clusterIssuerName,
-    }).addPath({
-      path: "/",
-      pathType: "ImplementationSpecific",
-      backend: {
-        service: { name: svc.name, port: { name: "console" } },
-      },
-    });
+    }).addPath({ path: "/", name: svc.name, port: "console" });
 
     new Ingress(this, "api-ingress", {
-      hostName: config.url("api.minio.k8s"),
+      hostName: `api.${url}`,
       clusterIssuerName,
-    }).addPath({
-      path: "/",
-      pathType: "ImplementationSpecific",
-      backend: {
-        service: { name: svc.name, port: { name: "api" } },
-      },
-    });
+    }).addPath({ path: "/", name: svc.name, port: "api" });
   }
 }

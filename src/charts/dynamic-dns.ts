@@ -5,13 +5,14 @@ import { Chart } from "~/constructs";
 
 export interface DynamicDNSChartProps extends ChartProps {
   credentialsSecretName: string;
+  targets: string[];
 }
 
 export class DynamicDNSChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { credentialsSecretName, ...props }: DynamicDNSChartProps
+    { credentialsSecretName, targets, ...props }: DynamicDNSChartProps
   ) {
     super(scope, id, props);
 
@@ -19,8 +20,19 @@ export class DynamicDNSChart extends Chart {
       metadata: { name: props.namespace },
     });
 
+    const env = targets.reduce(
+      (env, name, i) => ({
+        ...env,
+        [`DDNSR53_ROUTE53_RECORDSSET_${i}_NAME`]: name,
+        [`DDNSR53_ROUTE53_RECORDSSET_${i}_TTL`]: "300",
+        [`DDNSR53_ROUTE53_RECORDSSET_${i}_TYPE`]: "A",
+      }),
+      {} as Record<string, string>
+    );
+
     const config = new KubeConfigMap(this, "config", {
       data: {
+        ...env,
         TZ: "Australia/Brisbane",
         LOG_LEVEL: "info",
         LOG_JSON: "false",
