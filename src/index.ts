@@ -9,6 +9,7 @@ import { HelloWorldChart } from "./charts/hello-world";
 import { CertManagerChart } from "./charts/cert-manager";
 import { config, Image } from "./config";
 import { MinioChart } from "./charts/minio";
+import { MongoChart } from "./charts/mongo";
 
 const app = new App({ outdir: "manifests" });
 
@@ -50,6 +51,13 @@ new ActionsRunnerControllerChart(app, "arc", {
 const minio = new MinioChart(app, "minio", {
   namespace: "minio",
   url: config.url("minio.k8s"),
+  credentialsSecretName: "credentials",
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+});
+
+new MongoChart(app, "mongo", {
+  namespace: "mongo",
+  url: config.url("mongo.k8s"),
   credentialsSecretName: "credentials",
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });

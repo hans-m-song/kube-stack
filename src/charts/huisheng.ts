@@ -1,7 +1,7 @@
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { KubeNamespace, KubeService } from "@/k8s";
-import { Chart, Deployment } from "~/constructs";
+import { Chart, Deployment, Service } from "~/constructs";
 
 export interface HuiShengChartProps extends ChartProps {
   image: string;
@@ -31,10 +31,12 @@ export class HuiShengChart extends Chart {
       metadata: { name: props.namespace },
     });
 
-    const minioEndpoint = `${minioServiceName}.svc.cluster.local`;
-    new KubeService(this, "minio-api", {
-      spec: { type: "ExternalName", externalName: minioEndpoint },
-    });
+    const { endpoint: minioEndpoint } = Service.fromExternalServiceName(
+      this,
+      "minio-service",
+      selector,
+      minioServiceName
+    );
 
     new Deployment(this, "deployment", {
       selector,

@@ -1,12 +1,12 @@
 import {
-  Container,
   HttpIngressPath,
   IntOrString,
   KubeDeployment,
   KubeDeploymentProps,
   KubeIngress,
   KubeService,
-  Volume,
+  KubeServiceProps,
+  PodSpec,
 } from "@/k8s";
 import { ApiObject, Chart as Cdk8sChart, JsonPatch, Names } from "cdk8s";
 import { Construct } from "constructs";
@@ -18,50 +18,45 @@ export class Chart extends Cdk8sChart {
   }
 }
 
-export interface ServiceProps {
-  selector: Record<string, string>;
+export interface ServiceProps extends KubeServiceProps {
+  selector?: Record<string, string>;
   type?: string;
-  ports: { name: string; port: number }[];
+  ports?: { name: string; port: number }[];
 }
 
 export class Service extends KubeService {
+  static fromExternalServiceName(
+    scope: Construct,
+    id: string,
+    selector: Record<string, string>,
+    serviceName: string,
+    namespace?: string
+  ) {
+    const endpoint = [serviceName, namespace, "svc.cluster.local"]
+      .filter(Boolean)
+      .join(".");
+    const service = new Service(scope, id, {
+      spec: { selector, type: "ExternalName", externalName: endpoint },
+    });
+
+    return { endpoint, service };
+  }
+
   static fromDeployment(scope: Construct, id: string, deployment: Deployment) {
     const spec: KubeDeploymentProps = deployment.toJson();
     const selector = spec.spec?.selector.matchLabels;
-    const ports = spec.spec?.template.spec?.containers
-      .map((container) => container.ports)
-      .flat()
-      .filter((value): value is Exclude<typeof value, undefined> => !!value)
-      .map((spec) => ({ name: spec.name, port: spec.containerPort }))
-      .filter((spec): spec is ServiceProps["ports"][0] => !!spec.name);
+    const ports =
+      spec.spec?.template.spec?.containers
+        .map((container) => container.ports)
+        .flat()
+        .filter((value): value is Exclude<typeof value, undefined> => !!value)
+        .map((spec) => ({
+          name: spec.name,
+          port: spec.containerPort,
+          targetPort: IntOrString.fromNumber(spec.containerPort),
+        })) ?? [];
 
-    if (!selector) {
-      throw new Error("could not infer selector");
-    }
-
-    if (!ports) {
-      throw new Error("could not infer ports");
-    }
-
-    return new Service(scope, id, { selector, ports });
-  }
-
-  constructor(
-    scope: Construct,
-    id: string,
-    { selector, type = "ClusterIP", ports }: ServiceProps
-  ) {
-    super(scope, id, {
-      spec: {
-        selector,
-        type,
-        ports: ports.map(({ name, port }) => ({
-          name,
-          port,
-          targetPort: IntOrString.fromString(name),
-        })),
-      },
-    });
+    return new Service(scope, id, { spec: { selector, ports } });
   }
 }
 
@@ -118,25 +113,20 @@ export class Ingress extends KubeIngress {
   }
 }
 
-export interface DeploymentProps {
+export interface DeploymentProps extends PodSpec {
   selector: Record<string, string>;
-  containers: Container[];
-  volumes?: Volume[];
 }
 
 export class Deployment extends KubeDeployment {
   constructor(
     scope: Construct,
     id: string,
-    { selector, containers, volumes }: DeploymentProps
+    { selector, ...spec }: DeploymentProps
   ) {
     super(scope, id, {
       spec: {
         selector: { matchLabels: selector },
-        template: {
-          metadata: { labels: selector },
-          spec: { containers, volumes },
-        },
+        template: { metadata: { labels: selector }, spec },
       },
     });
   }

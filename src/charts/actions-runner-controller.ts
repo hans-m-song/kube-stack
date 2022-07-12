@@ -90,14 +90,14 @@ export class ActionsRunnerControllerChart extends Chart {
                     name: "go-cache",
                     hostPath: {
                       type: "DirectoryOrCreate",
-                      path: config.cache("go-cache"),
+                      path: config.cache("arc/go-cache"),
                     },
                   },
                   {
                     name: "yarn-cache",
                     hostPath: {
                       type: "DirectoryOrCreate",
-                      path: config.cache("yarn-cache"),
+                      path: config.cache("arc/yarn-cache"),
                     },
                   },
                 ],
