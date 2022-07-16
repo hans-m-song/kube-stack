@@ -2,7 +2,13 @@ import { KubeNamespace, KubeService } from "@/k8s";
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
-import { Chart, Deployment, Ingress, Service } from "~/constructs";
+import {
+  Chart,
+  Deployment,
+  Ingress,
+  Service,
+  volumeHostPath,
+} from "~/constructs";
 
 interface MongoChartProps extends ChartProps {
   url: string;
@@ -44,12 +50,7 @@ export class MongoChart extends Chart {
           env: [{ name: "ME_CONFIG_MONGODB_SERVER", value: "localhost" }],
         },
       ],
-      volumes: [
-        {
-          name: "data",
-          hostPath: { path: config.cache("mongo"), type: "DirectoryOrCreate" },
-        },
-      ],
+      volumes: [volumeHostPath("data", config.cache("mongo"))],
     });
 
     this.svc = Service.fromDeployment(this, "service", deployment);

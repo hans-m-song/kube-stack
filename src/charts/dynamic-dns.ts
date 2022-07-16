@@ -1,14 +1,17 @@
-import { ChartProps } from "cdk8s";
+import { ChartProps, JsonPatch } from "cdk8s";
 import { Construct } from "constructs";
 import { KubeConfigMap, KubeCronJob, KubeNamespace } from "@/k8s";
 import { Chart } from "~/constructs";
 
 export interface DynamicDNSChartProps extends ChartProps {
   credentialsSecretName: string;
-  targets: string[];
+  targets?: string[];
 }
 
 export class DynamicDNSChart extends Chart {
+  private targets: string[] = [];
+  private config: KubeConfigMap;
+
   constructor(
     scope: Construct,
     id: string,
@@ -20,24 +23,17 @@ export class DynamicDNSChart extends Chart {
       metadata: { name: props.namespace },
     });
 
-    const env = targets.reduce(
-      (env, name, i) => ({
-        ...env,
-        [`DDNSR53_ROUTE53_RECORDSSET_${i}_NAME`]: name,
-        [`DDNSR53_ROUTE53_RECORDSSET_${i}_TTL`]: "300",
-        [`DDNSR53_ROUTE53_RECORDSSET_${i}_TYPE`]: "A",
-      }),
-      {} as Record<string, string>
-    );
-
-    const config = new KubeConfigMap(this, "config", {
+    this.config = new KubeConfigMap(this, "config", {
       data: {
-        ...env,
         TZ: "Australia/Brisbane",
         LOG_LEVEL: "info",
         LOG_JSON: "false",
       },
     });
+
+    if (targets) {
+      this.addTargets(targets);
+    }
 
     new KubeCronJob(this, "cronjob", {
       spec: {
@@ -54,7 +50,7 @@ export class DynamicDNSChart extends Chart {
                     name: "update-dns",
                     image: "crazymax/ddns-route53",
                     envFrom: [
-                      { configMapRef: { name: config.name } },
+                      { configMapRef: { name: this.config.name } },
                       { secretRef: { name: credentialsSecretName } },
                     ],
                   },
@@ -65,5 +61,21 @@ export class DynamicDNSChart extends Chart {
         },
       },
     });
+  }
+
+  addTarget(name: string) {
+    const prefix = `/data/DDNSR53_ROUTE53_RECORDSSET_${this.targets.length}`;
+    this.config.addJsonPatch(
+      JsonPatch.add(`${prefix}_NAME`, name),
+      JsonPatch.add(`${prefix}_TTL`, "300"),
+      JsonPatch.add(`${prefix}_TYPE`, "A")
+    );
+    this.targets.push(name);
+    return this;
+  }
+
+  addTargets(names: string[]) {
+    names.forEach((name) => this.addTarget(name));
+    return this;
   }
 }

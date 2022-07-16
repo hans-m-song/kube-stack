@@ -21,7 +21,11 @@ const certManagers = new CertManagerChart(app, "cert-manager", {
 new DynamicDNSChart(app, "ddns", {
   namespace: "ddns",
   credentialsSecretName: "credentials",
-  targets: [config.url("hello.k8s"), config.url("arc.k8s")],
+  targets: [
+    config.url("arc.k8s"),
+    config.url("hass.k8s"),
+    config.url("hello.k8s"),
+  ],
 });
 
 new PrefetchChart(app, "prefetch", {

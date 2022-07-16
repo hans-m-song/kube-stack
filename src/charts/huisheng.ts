@@ -1,7 +1,7 @@
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
-import { KubeNamespace, KubeService } from "@/k8s";
-import { Chart, Deployment, Service } from "~/constructs";
+import { KubeNamespace } from "@/k8s";
+import { Chart, Deployment, Service, volumeHostPath } from "~/constructs";
 
 export interface HuiShengChartProps extends ChartProps {
   image: string;
@@ -56,15 +56,7 @@ export class HuiShengChart extends Chart {
           volumeMounts: [{ name: "data", mountPath: "/data" }],
         },
       ],
-      volumes: [
-        {
-          name: "data",
-          hostPath: {
-            path: cachePath,
-            type: "DirectoryOrCreate",
-          },
-        },
-      ],
+      volumes: [volumeHostPath("data", cachePath)],
     });
   }
 }

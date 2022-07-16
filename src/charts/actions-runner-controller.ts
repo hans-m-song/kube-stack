@@ -6,7 +6,7 @@ import {
 } from "@/actions.summerwind.dev";
 import { KubeNamespace } from "@/k8s";
 import { config } from "~/config";
-import { Chart, Ingress } from "~/constructs";
+import { Chart, Ingress, volumeHostPath } from "~/constructs";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
@@ -66,11 +66,6 @@ export class ActionsRunnerControllerChart extends Chart {
                 image: runnerImage,
                 ...(organization && { organization }),
                 ...(repository && { repository }),
-                volumeMounts: [
-                  { name: "var-lib-docker", mountPath: "/var/lib/docker" },
-                  { name: "go-cache", mountPath: `${cacheDir}/go` },
-                  { name: "yarn-cache", mountPath: `${cacheDir}/yarn` },
-                ],
                 env: [
                   // go
                   { name: "GOPATH", value: `${cacheDir}/go` },
@@ -78,28 +73,13 @@ export class ActionsRunnerControllerChart extends Chart {
                   // node
                   { name: "YARN_CACHE_FOLDER", value: `${cacheDir}/yarn` },
                 ],
+                volumeMounts: [
+                  { name: "go-cache", mountPath: `${cacheDir}/go` },
+                  { name: "yarn-cache", mountPath: `${cacheDir}/yarn` },
+                ],
                 volumes: [
-                  {
-                    name: "var-lib-docker",
-                    hostPath: {
-                      type: "DirectoryOrCreate",
-                      path: "/var/lib/docker",
-                    },
-                  },
-                  {
-                    name: "go-cache",
-                    hostPath: {
-                      type: "DirectoryOrCreate",
-                      path: config.cache("arc/go-cache"),
-                    },
-                  },
-                  {
-                    name: "yarn-cache",
-                    hostPath: {
-                      type: "DirectoryOrCreate",
-                      path: config.cache("arc/yarn-cache"),
-                    },
-                  },
+                  volumeHostPath("go-cache", config.cache("arc/go-cache")),
+                  volumeHostPath("yarn-cache", config.cache("arc/yarn-cache")),
                 ],
               },
             },

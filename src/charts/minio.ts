@@ -2,7 +2,7 @@ import { IntOrString, KubeNamespace, KubeService } from "@/k8s";
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
-import { Chart, Deployment, Ingress } from "~/constructs";
+import { Chart, Deployment, Ingress, Service } from "~/constructs";
 
 interface MinioChartProps extends ChartProps {
   url: string;
@@ -25,7 +25,7 @@ export class MinioChart extends Chart {
       metadata: { name: this.namespace },
     });
 
-    new Deployment(this, "deployment", {
+    const deployment = new Deployment(this, "deployment", {
       selector,
       containers: [
         {
@@ -48,33 +48,16 @@ export class MinioChart extends Chart {
       ],
     });
 
-    const svc = (this.svc = new KubeService(this, "service", {
-      spec: {
-        selector,
-        type: "ClusterIP",
-        ports: [
-          {
-            name: "api",
-            port: 9000,
-            targetPort: IntOrString.fromString("api"),
-          },
-          {
-            name: "console",
-            port: 9001,
-            targetPort: IntOrString.fromString("console"),
-          },
-        ],
-      },
-    }));
+    this.svc = Service.fromDeployment(this, "service", deployment);
 
     new Ingress(this, "ingress", {
       hostName: url,
       clusterIssuerName,
-    }).addPath({ path: "/", name: svc.name, port: "console" });
+    }).addPath({ path: "/", name: this.svc.name, port: "console" });
 
     new Ingress(this, "api-ingress", {
       hostName: `api.${url}`,
       clusterIssuerName,
-    }).addPath({ path: "/", name: svc.name, port: "api" });
+    }).addPath({ path: "/", name: this.svc.name, port: "api" });
   }
 }

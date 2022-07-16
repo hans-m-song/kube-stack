@@ -1,4 +1,5 @@
 import {
+  EnvVar,
   HttpIngressPath,
   IntOrString,
   KubeDeployment,
@@ -7,10 +8,26 @@ import {
   KubeService,
   KubeServiceProps,
   PodSpec,
+  Volume,
 } from "@/k8s";
 import { ApiObject, Chart as Cdk8sChart, JsonPatch, Names } from "cdk8s";
 import { Construct } from "constructs";
 import { slug } from "./utils";
+
+export const envVarSecretRef = (
+  secretName: string,
+  key: string,
+  name = key
+): EnvVar => ({
+  name,
+  valueFrom: { secretKeyRef: { key, name: secretName } },
+});
+
+export const volumeHostPath = (
+  name: string,
+  hostPath: string,
+  type = "DirectoryOrCreate"
+): Volume => ({ name, hostPath: { path: hostPath, type } });
 
 export class Chart extends Cdk8sChart {
   generateObjectName(apiObject: ApiObject): string {
@@ -129,5 +146,9 @@ export class Deployment extends KubeDeployment {
         template: { metadata: { labels: selector }, spec },
       },
     });
+  }
+
+  getService(scope: Construct, name: string) {
+    return Service.fromDeployment(scope, name, this);
   }
 }
