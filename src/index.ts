@@ -10,6 +10,9 @@ import { CertManagerChart } from "./charts/cert-manager";
 import { config, Image } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
+import { HomeAssistantChart } from "./charts/home-assistant";
+import { KubernetesDashboardChart } from "./charts/kubernetes-dashboard";
+import { ArgoCDChart } from "./charts/argocd";
 
 const app = new App({ outdir: "manifests" });
 
@@ -23,8 +26,11 @@ new DynamicDNSChart(app, "ddns", {
   credentialsSecretName: "credentials",
   targets: [
     config.url("arc.k8s"),
+    config.url("grafana.k8s"),
     config.url("hass.k8s"),
     config.url("hello.k8s"),
+    config.url("minio.k8s"),
+    config.url("portainer.k8s"),
   ],
 });
 
@@ -44,10 +50,11 @@ new ActionsRunnerControllerChart(app, "arc", {
   webhookUrl: config.url("arc.k8s"),
   runnerImage: "public.ecr.aws/t4g8t3e5/gha-runner:latest",
   targets: [
-    { repository: "hans-m-song/semantic-release-gha" },
-    { repository: "hans-m-song/semantic-release-mono-test" },
+    { repository: "hans-m-song/docker" },
     { repository: "hans-m-song/huisheng" },
     { repository: "hans-m-song/kube-stack" },
+    { repository: "hans-m-song/semantic-release-gha" },
+    { repository: "hans-m-song/semantic-release-mono-test" },
     { organization: "tunes-anywhere" },
   ],
 });
@@ -63,6 +70,12 @@ new MongoChart(app, "mongo", {
   namespace: "mongo",
   url: config.url("mongo.k8s"),
   credentialsSecretName: "credentials",
+});
+
+new HomeAssistantChart(app, "home-assistant", {
+  namespace: "home-assistant",
+  url: config.url("hass.k8s"),
+  credentialsSecretName: "credentials",
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
@@ -73,6 +86,17 @@ new HuiShengChart(app, "huisheng", {
   credentialsSecretName: "credentials",
   botPrefix: ">",
   minioServiceName: `${minio.svc.name}.${minio.namespace}`,
+});
+
+new KubernetesDashboardChart(app, "kubernetes-dashboard", {
+  namespace: "kubernetes-dashboard",
+  url: config.url("dash.k8s"),
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+});
+
+new ArgoCDChart(app, "argocd", {
+  namespace: "argocd",
+  url: config.url("argocd.k8s"),
 });
 
 app.synth();

@@ -55,7 +55,7 @@ export class MongoChart extends Chart {
 
     this.svc = Service.fromDeployment(this, "service", deployment);
 
-    new Ingress(this, "ingress", { hostName: url }).addPath({
+    new Ingress(this, "ingress", { hostName: url, clusterIssuerName }).addPath({
       path: "/",
       name: this.svc.name,
       port: "console",

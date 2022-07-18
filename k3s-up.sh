@@ -38,22 +38,22 @@ helm upgrade actions-runner-controller actions-runner-controller/actions-runner-
 # helm show values prometheus prometheus-community/kube-prometheus-stack \
 # helm template prometheus prometheus-community/kube-prometheus-stack \
 helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-  --install \
+  --set "grafana.ingress.enabled=true" \
+  --set "grafana.ingress.annotations.kubernetes\.io/ingress\.class=traefik" \
+  --set "grafana.ingress.annotations.cert-manager\.io/cluster-issuer=cert-manager-cluster-issuer-prd" \
+  --set "grafana.ingress.hosts[0]=grafana.k8s.axatol.xyz" \
+  --set "grafana.ingress.paths[0]=/" \
+  --set "grafana.ingress.tls[0].secretName=grafana-k8s-axatol-xyz-tls" \
+  --set "grafana.ingress.tls[0].hosts[0]=grafana.k8s.axatol.xyz" \
+  --set "prometheus.ingress.enabled=true" \
+  --set "prometheus.ingress.annotations.kubernetes\.io/ingress\.class=traefik" \
+  --set "prometheus.ingress.hosts[0]=prometheus.k8s.axatol.xyz" \
+  --set "prometheus.ingress.paths[0]=/" \
   --atomic \
+  --install \
   --create-namespace \
-  --namespace prometheus \
+  --namespace monitoring \
   --wait
-
-./create-secrets.sh
-
-kubectl apply -f manifests/cert-manager.k8s.yaml
-kubectl apply -f manifests/hello-world.k8s.yaml
-kubectl apply -f manifests/ddns.k8s.yaml
-kubectl apply -f manifests/prefetch.k8s.yaml
-kubectl apply -f manifests/arc.k8s.yaml
-kubectl apply -f manifests/minio.k8s.yaml
-kubectl apply -f manifests/mongo.k8s.yaml
-kubectl apply -f manifests/huisheng.k8s.yaml
 
 # TODO home assistant
 # kubectl apply -f manifests/home-assistant.k8s.yaml
@@ -67,15 +67,13 @@ helm upgrade kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
   --set "ingress.annotations.kubernetes\.io/ingress\.class=traefik" \
   --set "ingress.annotations.cert-manager\.io/cluster-issuer=cert-manager-cluster-issuer-prd" \
   --set "ingress.hosts[0]=dash.k8s.axatol.xyz" \
-  --set "ingress.hosts[0]=dash.k8s.axatol.xyz" \
   --set "ingress.tls[0].secretName=dash-k8s-axatol-xyz-tls" \
   --set "ingress.tls[0].hosts[0]=dash.k8s.axatol.xyz" \
   --atomic \
   --install \
   --create-namespace \
   --namespace kubernetes-dashboard \
-  --wait \
-  --dry-run >kubernetes-dashboard.yaml
+  --wait
 # kubectl apply -f manifests/kubernetes-dashboard.k8s.yaml
 
 helm upgrade portainer portainer/portainer \
@@ -95,3 +93,17 @@ helm upgrade portainer portainer/portainer \
 
 # --set "tls.force=true" \
 # --set ingress.annotations."nginx\.ingress\.kubernetes\.io/backend-protocol"=HTTPS \
+
+./create-secrets.sh
+
+kubectl apply -f manifests/cert-manager.k8s.yaml
+kubectl apply -f manifests/hello-world.k8s.yaml
+kubectl apply -f manifests/ddns.k8s.yaml
+kubectl apply -f manifests/prefetch.k8s.yaml
+kubectl apply -f manifests/arc.k8s.yaml
+kubectl apply -f manifests/minio.k8s.yaml
+kubectl apply -f manifests/mongo.k8s.yaml
+kubectl apply -f manifests/huisheng.k8s.yaml
+
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml

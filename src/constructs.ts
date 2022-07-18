@@ -41,24 +41,55 @@ export interface ServiceProps extends KubeServiceProps {
   ports?: { name: string; port: number }[];
 }
 
-export class Service extends KubeService {
-  static fromExternalServiceName(
+export class ExternalServiceName extends KubeService {
+  name: string;
+
+  constructor(scope: Construct, id: string, props: KubeServiceProps) {
+    if (!props.spec?.externalName) {
+      throw new Error("must specify spec.externalName");
+    }
+
+    super(scope, id, props);
+    this.name = props.spec.externalName;
+  }
+
+  private static getEndpoint(serviceName: string, namespace?: string) {
+    return [serviceName, namespace, "svc.cluster.local"]
+      .filter(Boolean)
+      .join(".");
+  }
+
+  static fromServiceAttributes(
     scope: Construct,
     id: string,
     selector: Record<string, string>,
     serviceName: string,
     namespace?: string
   ) {
-    const endpoint = [serviceName, namespace, "svc.cluster.local"]
-      .filter(Boolean)
-      .join(".");
-    const service = new Service(scope, id, {
+    const endpoint = this.getEndpoint(serviceName, namespace);
+    return new ExternalServiceName(scope, id, {
       spec: { selector, type: "ExternalName", externalName: endpoint },
     });
-
-    return { endpoint, service };
   }
 
+  static fromService<Service extends KubeService>(
+    scope: Construct,
+    id: string,
+    selector: Record<string, string>,
+    service: Service
+  ) {
+    const endpoint = this.getEndpoint(service.name, service.metadata.namespace);
+    return new ExternalServiceName(scope, id, {
+      spec: {
+        selector,
+        type: "ExternalName",
+        externalName: endpoint,
+      },
+    });
+  }
+}
+
+export class Service extends KubeService {
   static fromDeployment(scope: Construct, id: string, deployment: Deployment) {
     const spec: KubeDeploymentProps = deployment.toJson();
     const selector = spec.spec?.selector.matchLabels;

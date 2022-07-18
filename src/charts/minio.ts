@@ -1,4 +1,4 @@
-import { IntOrString, KubeNamespace, KubeService } from "@/k8s";
+import { KubeNamespace, KubeService } from "@/k8s";
 import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
