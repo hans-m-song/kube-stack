@@ -1,17 +1,18 @@
-import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import {
   HorizontalRunnerAutoscaler,
   RunnerDeployment,
 } from "@/actions.summerwind.dev";
-import { KubeNamespace } from "@/k8s";
 import { config } from "~/config";
-import { Chart, Ingress, volumeHostPath } from "~/constructs";
+import { Chart, ChartProps, Ingress, volumeHostPath } from "~/constructs";
+import { Application } from "@/argoproj.io";
+import { Yaml } from "cdk8s";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
   webhookUrl: string;
   runnerImage: string;
+  targetRevision: string;
 }
 
 export class ActionsRunnerControllerChart extends Chart {
@@ -22,13 +23,39 @@ export class ActionsRunnerControllerChart extends Chart {
       targets,
       webhookUrl,
       runnerImage,
+      targetRevision,
       ...props
     }: ActionsRunnerControllerChartProps
   ) {
     super(scope, id, props);
 
-    new KubeNamespace(this, "namespace", {
-      metadata: { name: props.namespace },
+    new Application(this, "actions-runner-controller", {
+      metadata: {},
+      spec: {
+        project: "default",
+        source: {
+          targetRevision,
+          repoUrl:
+            "https://actions-runner-controller.github.io/actions-runner-controller",
+          chart: "actions-runner-controller",
+          helm: {
+            values: Yaml.stringify({
+              authSecret: {
+                create: true,
+                github_token: "foo",
+              },
+              githubWebhookServer: {
+                enabled: true,
+                ports: [{ nodePort: 33080 }],
+              },
+            }),
+          },
+        },
+        destination: {
+          namespace: "actions-runner-system",
+          name: "in-cluster",
+        },
+      },
     });
 
     new HorizontalRunnerAutoscaler(this, "horizontalrunnerautoscaler", {

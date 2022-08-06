@@ -1,8 +1,7 @@
-import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
-import { KubeCronJob, KubeNamespace } from "@/k8s";
+import { KubeCronJob } from "@/k8s";
 import { slug } from "~/utils";
-import { Chart } from "~/constructs";
+import { Chart, ChartProps } from "~/constructs";
 
 export interface PrefetchChartProps extends ChartProps {
   images: string[];
@@ -17,10 +16,6 @@ export class PrefetchChart extends Chart {
     { images, ...props }: PrefetchChartProps
   ) {
     super(scope, id, props);
-
-    new KubeNamespace(this, "namespace", {
-      metadata: { name: props.namespace },
-    });
 
     this.cronJob = new KubeCronJob(this, "cronjob", {
       spec: {

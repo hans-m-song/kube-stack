@@ -1,0 +1,77 @@
+import { Application } from "@/argoproj.io";
+import { Yaml } from "cdk8s";
+import { Construct } from "constructs";
+import { Chart, ChartProps } from "~/constructs";
+import { slug } from "~/utils";
+
+interface PrometheusChartProps extends ChartProps {
+  prometheusUrl: string;
+  grafanaUrl: string;
+  targetRevision: string;
+  clusterIssuerName?: string;
+}
+
+export class PrometheusChart extends Chart {
+  constructor(
+    scope: Construct,
+    id: string,
+    {
+      targetRevision,
+      prometheusUrl,
+      grafanaUrl,
+      clusterIssuerName,
+      ...props
+    }: PrometheusChartProps
+  ) {
+    super(scope, id, props);
+
+    new Application(this, "prometheus", {
+      metadata: {},
+      spec: {
+        project: "default",
+        source: {
+          targetRevision,
+          repoUrl: "https://prometheus-community.github.io/helm-charts",
+          chart: "kube-prometheus-stack",
+          helm: {
+            values: Yaml.stringify({
+              grafana: {
+                ingress: {
+                  enabled: true,
+                  annotations: {
+                    "kubernetes.io/ingress.class": "traefik",
+                    ...(clusterIssuerName && {
+                      "cert-manager.io/cluster-issuer": clusterIssuerName,
+                    }),
+                  },
+                  hosts: [grafanaUrl],
+                  paths: ["/"],
+                  tls: [
+                    {
+                      secretName: `${slug(grafanaUrl)}-tls`,
+                      hosts: [grafanaUrl],
+                    },
+                  ],
+                },
+              },
+              prometheus: {
+                ingress: {
+                  enabled: true,
+                  annotations: {
+                    "kubernetes.io/ingress.class": "traefik",
+                  },
+                  hosts: [prometheusUrl],
+                  paths: ["/"],
+                },
+              },
+            }),
+          },
+        },
+        destination: {
+          name: "in-cluster",
+          namespace: "monitoring",
+        },
+      },
+    });
+  }
+}

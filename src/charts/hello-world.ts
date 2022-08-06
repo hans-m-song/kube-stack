@@ -1,7 +1,6 @@
-import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { IntOrString, KubeConfigMap, KubeNamespace, KubeService } from "@/k8s";
-import { Chart, Deployment, Ingress } from "~/constructs";
+import { Chart, ChartProps, Deployment, Ingress } from "~/constructs";
 
 const nginxConf = `events {
 }
@@ -32,10 +31,6 @@ export class HelloWorldChart extends Chart {
   ) {
     super(scope, id, props);
     const selector = { app: "hello" };
-
-    new KubeNamespace(this, "namespace", {
-      metadata: { name: props.namespace },
-    });
 
     const config = new KubeConfigMap(this, "config", {
       data: { "nginx.conf": nginxConf },

@@ -1,7 +1,7 @@
-import { ChartProps, JsonPatch } from "cdk8s";
+import { JsonPatch } from "cdk8s";
 import { Construct } from "constructs";
-import { KubeConfigMap, KubeCronJob, KubeNamespace } from "@/k8s";
-import { Chart } from "~/constructs";
+import { KubeConfigMap, KubeCronJob } from "@/k8s";
+import { Chart, ChartProps } from "~/constructs";
 
 export interface DynamicDNSChartProps extends ChartProps {
   credentialsSecretName: string;
@@ -18,10 +18,6 @@ export class DynamicDNSChart extends Chart {
     { credentialsSecretName, targets, ...props }: DynamicDNSChartProps
   ) {
     super(scope, id, props);
-
-    new KubeNamespace(this, "namespace", {
-      metadata: { name: props.namespace },
-    });
 
     this.config = new KubeConfigMap(this, "config", {
       data: {

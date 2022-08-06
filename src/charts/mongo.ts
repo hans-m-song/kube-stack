@@ -1,9 +1,9 @@
-import { KubeNamespace, KubeService } from "@/k8s";
-import { ChartProps } from "cdk8s";
+import { KubeService } from "@/k8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
 import {
   Chart,
+  ChartProps,
   Deployment,
   Ingress,
   Service,
@@ -27,10 +27,6 @@ export class MongoChart extends Chart {
     super(scope, id, props);
     const selector = { app: "mongo" };
 
-    new KubeNamespace(this, "namespace", {
-      metadata: { name: this.namespace },
-    });
-
     const deployment = new Deployment(this, "deployment", {
       selector,
       containers: [
@@ -53,9 +49,9 @@ export class MongoChart extends Chart {
       volumes: [volumeHostPath("data", config.cache("mongo"))],
     });
 
-    this.svc = Service.fromDeployment(this, "service", deployment);
+    this.svc = Service.fromDeployment(this, deployment);
 
-    new Ingress(this, "ingress", { hostName: url }).addPath({
+    new Ingress(this, "ingress", { hostName: url, clusterIssuerName }).addPath({
       path: "/",
       name: this.svc.name,
       port: "console",

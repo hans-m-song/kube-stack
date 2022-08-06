@@ -10,7 +10,13 @@ export enum Image {
   GHARunner = "public.ecr.aws/t4g8t3e5/gha-runner:latest",
 }
 
-const url = (subdomain: string) => `${subdomain}.${hostname}`;
+export const registeredUrls: string[] = [];
+const url = (subdomain: string, register?: boolean) => {
+  const domain = `${subdomain}.${hostname}`;
+  if (register) registeredUrls.push(domain);
+  return domain;
+};
+
 const cache = (name: string) => path.join(cacheDir, name);
 
 export const config = {

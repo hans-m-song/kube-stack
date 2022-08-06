@@ -5,12 +5,20 @@ import {
   KubeDeployment,
   KubeDeploymentProps,
   KubeIngress,
+  KubeNamespace,
+  KubeNamespaceProps,
   KubeService,
   KubeServiceProps,
   PodSpec,
   Volume,
 } from "@/k8s";
-import { ApiObject, Chart as Cdk8sChart, JsonPatch, Names } from "cdk8s";
+import {
+  ApiObject,
+  Chart as Cdk8sChart,
+  ChartProps as Cdk8sChartProps,
+  JsonPatch,
+  Names,
+} from "cdk8s";
 import { Construct } from "constructs";
 import { slug } from "./utils";
 
@@ -29,7 +37,34 @@ export const volumeHostPath = (
   type = "DirectoryOrCreate"
 ): Volume => ({ name, hostPath: { path: hostPath, type } });
 
+export interface NamespaceProps extends KubeNamespaceProps {
+  name: string;
+}
+
+export class Namespace extends KubeNamespace {
+  constructor(
+    scope: Construct,
+    id: string,
+    { name, ...props }: NamespaceProps
+  ) {
+    super(scope, id, { ...props, metadata: { ...props.metadata, name } });
+  }
+}
+
+export interface ChartProps extends Cdk8sChartProps {
+  namespace: string;
+}
+
 export class Chart extends Cdk8sChart {
+  namespace: string;
+  ns: Namespace;
+
+  constructor(scope: Construct, id: string, props: ChartProps) {
+    super(scope, id, props);
+    this.namespace = props.namespace;
+    this.ns = new Namespace(this, "namespace", { name: props.namespace });
+  }
+
   generateObjectName(apiObject: ApiObject): string {
     return Names.toDnsLabel(apiObject, { includeHash: false });
   }
@@ -41,25 +76,52 @@ export interface ServiceProps extends KubeServiceProps {
   ports?: { name: string; port: number }[];
 }
 
-export class Service extends KubeService {
-  static fromExternalServiceName(
+export class ExternalServiceName extends KubeService {
+  name: string;
+
+  private static getEndpoint(serviceName: string, namespace?: string) {
+    return [serviceName, namespace, "svc.cluster.local"]
+      .filter(Boolean)
+      .join(".");
+  }
+
+  constructor(scope: Construct, id: string, props: KubeServiceProps) {
+    if (!props.spec?.externalName) {
+      throw new Error("must specify spec.externalName");
+    }
+
+    super(scope, id, props);
+    this.name = props.spec.externalName;
+  }
+
+  static fromServiceAttributes(
     scope: Construct,
     id: string,
-    selector: Record<string, string>,
     serviceName: string,
     namespace?: string
   ) {
-    const endpoint = [serviceName, namespace, "svc.cluster.local"]
-      .filter(Boolean)
-      .join(".");
-    const service = new Service(scope, id, {
-      spec: { selector, type: "ExternalName", externalName: endpoint },
+    const endpoint = this.getEndpoint(serviceName, namespace);
+    return new ExternalServiceName(scope, id, {
+      spec: { type: "ExternalName", externalName: endpoint },
     });
-
-    return { endpoint, service };
   }
 
-  static fromDeployment(scope: Construct, id: string, deployment: Deployment) {
+  static fromService<Service extends KubeService>(
+    scope: Construct,
+    id: string,
+    service: Service
+  ) {
+    return this.fromServiceAttributes(
+      scope,
+      id,
+      service.name,
+      service.metadata.namespace
+    );
+  }
+}
+
+export class Service extends KubeService {
+  static fromDeployment(scope: Construct, deployment: Deployment, id?: string) {
     const spec: KubeDeploymentProps = deployment.toJson();
     const selector = spec.spec?.selector.matchLabels;
     const ports =
@@ -73,7 +135,9 @@ export class Service extends KubeService {
           targetPort: IntOrString.fromNumber(spec.containerPort),
         })) ?? [];
 
-    return new Service(scope, id, { spec: { selector, ports } });
+    return new Service(scope, id ?? `${deployment.node.id}-service`, {
+      spec: { selector, ports },
+    });
   }
 }
 
@@ -148,7 +212,7 @@ export class Deployment extends KubeDeployment {
     });
   }
 
-  getService(scope: Construct, name: string) {
-    return Service.fromDeployment(scope, name, this);
+  getService(scope: Construct, id?: string) {
+    return Service.fromDeployment(scope, this, id);
   }
 }

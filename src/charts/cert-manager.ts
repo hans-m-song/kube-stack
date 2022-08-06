@@ -1,9 +1,9 @@
-import { ChartProps } from "cdk8s";
 import { Construct } from "constructs";
 import { ClusterIssuer } from "@/cert-manager.io";
-import { KubeNamespace } from "@/k8s";
-import { Chart } from "~/constructs";
+import { Chart, ChartProps } from "~/constructs";
 import { slug } from "~/utils";
+import { Application } from "@/argoproj.io";
+import { Yaml } from "cdk8s";
 
 export interface CertManagerDNSTarget {
   region: string;
@@ -13,6 +13,7 @@ export interface CertManagerDNSTarget {
 
 export interface CertManagerChartProps extends ChartProps {
   email: string;
+  targetRevision: string;
 }
 
 export class CertManagerChart extends Chart {
@@ -22,12 +23,25 @@ export class CertManagerChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { email, ...props }: CertManagerChartProps
+    { email, targetRevision, ...props }: CertManagerChartProps
   ) {
     super(scope, id, props);
 
-    new KubeNamespace(this, "namespace", {
-      metadata: { name: props.namespace },
+    new Application(this, "cert-manager", {
+      metadata: {},
+      spec: {
+        project: "default",
+        source: {
+          targetRevision,
+          repoUrl: "https://charts.jetstack.io",
+          chart: "cert-manager",
+          helm: { values: Yaml.stringify({ installCRDs: true }) },
+        },
+        destination: {
+          name: "in-cluster",
+          namespace: "cert-manager",
+        },
+      },
     });
 
     this.clusterIssuerStg = this.createIssuer(
