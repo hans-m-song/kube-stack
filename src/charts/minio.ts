@@ -1,4 +1,4 @@
-import { KubeNamespace, KubeService } from "@/k8s";
+import { KubeService } from "@/k8s";
 
 import { Construct } from "constructs";
 import { config } from "~/config";

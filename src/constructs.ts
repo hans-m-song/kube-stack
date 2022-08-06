@@ -1,3 +1,4 @@
+import { Application, ApplicationProps } from "@/argoproj.io";
 import {
   EnvVar,
   HttpIngressPath,
@@ -18,6 +19,7 @@ import {
   ChartProps as Cdk8sChartProps,
   JsonPatch,
   Names,
+  Yaml,
 } from "cdk8s";
 import { Construct } from "constructs";
 import { slug } from "./utils";
@@ -214,5 +216,42 @@ export class Deployment extends KubeDeployment {
 
   getService(scope: Construct, id?: string) {
     return Service.fromDeployment(scope, this, id);
+  }
+}
+
+interface ArgoCDAppProps extends Omit<ApplicationProps, "metadata" | "spec"> {
+  metadata?: Omit<ApplicationProps["metadata"], "namespace">;
+  spec: Omit<ApplicationProps["spec"], "source"> & {
+    source: Omit<ApplicationProps["spec"]["source"], "helm"> & {
+      helm: Omit<ApplicationProps["spec"]["source"]["helm"], "values"> & {
+        values: Record<string, unknown>;
+      };
+    };
+  };
+}
+
+export class ArgoCDApp extends Application {
+  constructor(scope: Construct, id: string, props: ArgoCDAppProps) {
+    props.spec.source.helm.values;
+    super(scope, id, {
+      ...props,
+      metadata: {
+        name: id,
+        namespace: "argocd",
+        ...props.metadata,
+      },
+      spec: {
+        ...props.spec,
+        source: {
+          ...props.spec.source,
+          helm: props.spec.source.helm && {
+            ...props.spec.source.helm,
+            values:
+              props.spec.source.helm.values &&
+              Yaml.stringify(props.spec.source.helm.values),
+          },
+        },
+      },
+    });
   }
 }

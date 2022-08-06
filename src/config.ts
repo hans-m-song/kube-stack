@@ -17,7 +17,7 @@ const url = (subdomain: string, register?: boolean) => {
   return domain;
 };
 
-const cache = (name: string) => path.join(cacheDir, name);
+const cache = (...names: string[]) => path.join(cacheDir, ...names);
 
 export const config = {
   url,

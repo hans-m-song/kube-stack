@@ -1,7 +1,5 @@
-import { Application } from "@/argoproj.io";
-import { Yaml } from "cdk8s";
 import { Construct } from "constructs";
-import { Chart, ChartProps } from "~/constructs";
+import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
 import { slug } from "~/utils";
 
 interface PortainerChartProps extends ChartProps {
@@ -18,8 +16,7 @@ export class PortainerChart extends Chart {
   ) {
     super(scope, id, props);
 
-    new Application(this, "portainer", {
-      metadata: { namespace: "argocd" },
+    new ArgoCDApp(this, "portainer", {
       spec: {
         project: "default",
         source: {
@@ -27,7 +24,7 @@ export class PortainerChart extends Chart {
           repoUrl: "https://portainer.github.io/k8s/",
           chart: "portainer",
           helm: {
-            values: Yaml.stringify({
+            values: {
               service: { type: "ClusterIP" },
               ingress: {
                 enabled: true,
@@ -40,7 +37,7 @@ export class PortainerChart extends Chart {
                 hosts: [{ host: url, paths: [{ path: "/" }] }],
                 tls: [{ secretName: `${slug(url)}-tls`, hosts: [url] }],
               },
-            }),
+            },
           },
         },
         destination: {

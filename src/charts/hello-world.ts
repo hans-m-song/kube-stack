@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { IntOrString, KubeConfigMap, KubeNamespace, KubeService } from "@/k8s";
+import { IntOrString, KubeConfigMap, KubeService } from "@/k8s";
 import { Chart, ChartProps, Deployment, Ingress } from "~/constructs";
 
 const nginxConf = `events {

@@ -1,9 +1,7 @@
 import { Construct } from "constructs";
 import { ClusterIssuer } from "@/cert-manager.io";
-import { Chart, ChartProps } from "~/constructs";
+import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
 import { slug } from "~/utils";
-import { Application } from "@/argoproj.io";
-import { Yaml } from "cdk8s";
 
 export interface CertManagerDNSTarget {
   region: string;
@@ -27,15 +25,14 @@ export class CertManagerChart extends Chart {
   ) {
     super(scope, id, props);
 
-    new Application(this, "cert-manager", {
-      metadata: {},
+    new ArgoCDApp(this, "cert-manager", {
       spec: {
         project: "default",
         source: {
           targetRevision,
           repoUrl: "https://charts.jetstack.io",
           chart: "cert-manager",
-          helm: { values: Yaml.stringify({ installCRDs: true }) },
+          helm: { values: { installCRDs: true } },
         },
         destination: {
           name: "in-cluster",

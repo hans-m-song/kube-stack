@@ -1,7 +1,5 @@
-import { Application } from "@/argoproj.io";
-import { Yaml } from "cdk8s";
 import { Construct } from "constructs";
-import { Chart, ChartProps } from "~/constructs";
+import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
 import { slug } from "~/utils";
 
 interface PrometheusChartProps extends ChartProps {
@@ -25,8 +23,7 @@ export class PrometheusChart extends Chart {
   ) {
     super(scope, id, props);
 
-    new Application(this, "prometheus", {
-      metadata: {},
+    new ArgoCDApp(this, "prometheus", {
       spec: {
         project: "default",
         source: {
@@ -34,7 +31,7 @@ export class PrometheusChart extends Chart {
           repoUrl: "https://prometheus-community.github.io/helm-charts",
           chart: "kube-prometheus-stack",
           helm: {
-            values: Yaml.stringify({
+            values: {
               grafana: {
                 ingress: {
                   enabled: true,
@@ -64,7 +61,7 @@ export class PrometheusChart extends Chart {
                   paths: ["/"],
                 },
               },
-            }),
+            },
           },
         },
         destination: {

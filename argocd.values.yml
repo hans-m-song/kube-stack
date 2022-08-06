@@ -1,0 +1,21 @@
+dex:
+  enabled: false
+
+server:
+  extraArgs:
+    - --insecure
+
+  config:
+    accounts.argocd: login
+
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: traefik
+      cert-manager.io/cluster-issuer: cert-manager-cluster-issuer-prd
+    hosts:
+      - argocd.k8s.axatol.xyz
+    tls:
+      - secretName: argocd-k8s-axatol-xyz-tls
+        hosts:
+          - argocd.k8s.axatol.xyz

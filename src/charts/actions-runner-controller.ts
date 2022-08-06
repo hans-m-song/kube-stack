@@ -4,15 +4,21 @@ import {
   RunnerDeployment,
 } from "@/actions.summerwind.dev";
 import { config } from "~/config";
-import { Chart, ChartProps, Ingress, volumeHostPath } from "~/constructs";
-import { Application } from "@/argoproj.io";
-import { Yaml } from "cdk8s";
+import {
+  ArgoCDApp,
+  Chart,
+  ChartProps,
+  Ingress,
+  volumeHostPath,
+} from "~/constructs";
+import path = require("path");
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
   webhookUrl: string;
   runnerImage: string;
   targetRevision: string;
+  clusterIssuerName?: string;
 }
 
 export class ActionsRunnerControllerChart extends Chart {
@@ -24,13 +30,13 @@ export class ActionsRunnerControllerChart extends Chart {
       webhookUrl,
       runnerImage,
       targetRevision,
+      clusterIssuerName,
       ...props
     }: ActionsRunnerControllerChartProps
   ) {
     super(scope, id, props);
 
-    new Application(this, "actions-runner-controller", {
-      metadata: {},
+    new ArgoCDApp(this, "actions-runner-controller", {
       spec: {
         project: "default",
         source: {
@@ -39,16 +45,12 @@ export class ActionsRunnerControllerChart extends Chart {
             "https://actions-runner-controller.github.io/actions-runner-controller",
           chart: "actions-runner-controller",
           helm: {
-            values: Yaml.stringify({
-              authSecret: {
-                create: true,
-                github_token: "foo",
-              },
+            values: {
               githubWebhookServer: {
                 enabled: true,
                 ports: [{ nodePort: 33080 }],
               },
-            }),
+            },
           },
         },
         destination: {
@@ -66,14 +68,19 @@ export class ActionsRunnerControllerChart extends Chart {
       },
     });
 
-    new Ingress(this, "ingress", { hostName: webhookUrl }).addPath({
+    new Ingress(this, "ingress", {
+      hostName: webhookUrl,
+      clusterIssuerName,
+    }).addPath({
       pathType: "Exact",
       path: "/webhook",
       name: "actions-runner-controller-github-webhook-server",
       port: "http",
     });
 
-    const cacheDir = "/home/runner/.cache";
+    const runnerCache = (...names: string[]) =>
+      path.join("/home/runner/.cache", ...names);
+    const cacheDir = (...names: string[]) => config.cache("arc", ...names);
 
     targets.map(({ organization, repository }) => {
       if ((!organization && !repository) || (organization && repository)) {
@@ -95,18 +102,18 @@ export class ActionsRunnerControllerChart extends Chart {
                 ...(repository && { repository }),
                 env: [
                   // go
-                  { name: "GOPATH", value: `${cacheDir}/go` },
-                  { name: "GOMODCACHE", value: `${cacheDir}/go/pkg/mod` },
+                  { name: "GOPATH", value: runnerCache("go") },
+                  { name: "GOMODCACHE", value: runnerCache("go/pkg/mod") },
                   // node
-                  { name: "YARN_CACHE_FOLDER", value: `${cacheDir}/yarn` },
+                  { name: "YARN_CACHE_FOLDER", value: runnerCache("yarn") },
                 ],
                 volumeMounts: [
-                  { name: "go-cache", mountPath: `${cacheDir}/go` },
-                  { name: "yarn-cache", mountPath: `${cacheDir}/yarn` },
+                  { name: "go-cache", mountPath: runnerCache("go") },
+                  { name: "yarn-cache", mountPath: runnerCache("yarn") },
                 ],
                 volumes: [
-                  volumeHostPath("go-cache", config.cache("arc/go-cache")),
-                  volumeHostPath("yarn-cache", config.cache("arc/yarn-cache")),
+                  volumeHostPath("go-cache", cacheDir("go-cache")),
+                  volumeHostPath("yarn-cache", cacheDir("yarn-cache")),
                 ],
               },
             },

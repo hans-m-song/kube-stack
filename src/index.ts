@@ -11,7 +11,6 @@ import { config, Image, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
 import { HomeAssistantChart } from "./charts/home-assistant";
-import { KubernetesDashboardChart } from "./charts/kubernetes-dashboard";
 import { PortainerChart } from "./charts/portainer";
 import { PrometheusChart } from "./charts/prometheus";
 
@@ -31,8 +30,8 @@ new PrefetchChart(app, "prefetch", {
 new PrometheusChart(app, "prometheus", {
   namespace: "monitoring",
   grafanaUrl: config.url("grafana.k8s", true),
-  prometheusUrl: config.url("prometheus.k8s", true),
-  targetRevision: "0.58.0",
+  prometheusUrl: config.url("prometheus.k8s"),
+  targetRevision: "39.4.0",
 });
 
 new PortainerChart(app, "portainer", {
@@ -50,15 +49,17 @@ new HelloWorldChart(app, "hello-world", {
 
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
   webhookUrl: config.url("arc.k8s", true),
   runnerImage: "public.ecr.aws/t4g8t3e5/gha-runner:latest",
-  targetRevision: "0.25.2",
+  targetRevision: "0.20.2",
   targets: [
+    // repos
     { repository: "hans-m-song/docker" },
     { repository: "hans-m-song/huisheng" },
-    { repository: "hans-m-song/kube-stack" },
     { repository: "hans-m-song/semantic-release-gha" },
-    { repository: "hans-m-song/semantic-release-mono-test" },
+    { repository: "hans-m-song/zeversolar-monitor" },
+    // organisations
     { organization: "tunes-anywhere" },
   ],
 });
@@ -92,12 +93,6 @@ new HuiShengChart(app, "huisheng", {
   credentialsSecretName: "credentials",
   botPrefix: ">",
   minioServiceName: `${minio.svc.name}.${minio.namespace}`,
-});
-
-new KubernetesDashboardChart(app, "kubernetes-dashboard", {
-  namespace: "kubernetes-dashboard",
-  url: config.url("dash.k8s"),
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 // this should go last to pick up all the registered domains
