@@ -14,7 +14,6 @@ import { HomeAssistantChart } from "./charts/home-assistant";
 import { KubernetesDashboardChart } from "./charts/kubernetes-dashboard";
 import { PortainerChart } from "./charts/portainer";
 import { PrometheusChart } from "./charts/prometheus";
-import { MosquittoChart } from "./charts/mosquitto";
 
 const app = new App({ outdir: "manifests" });
 
@@ -78,17 +77,12 @@ new MongoChart(app, "mongo", {
   credentialsSecretName: "credentials",
 });
 
-const mqtt = new MosquittoChart(app, "mosquitto", {
-  namespace: "mosquitto",
-  url: "mqtt.k8s",
-});
-
 new HomeAssistantChart(app, "hass", {
   namespace: "home-assistant",
   url: config.url("hass.k8s", true),
+  mqttUrl: config.url("mqtt.hass.k8s"),
   credentialsSecretName: "credentials",
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
-  mqttServiceName: `${mqtt.service.name}.${mqtt.namespace}`,
 });
 
 new HuiShengChart(app, "huisheng", {

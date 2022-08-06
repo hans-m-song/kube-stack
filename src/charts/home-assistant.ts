@@ -1,18 +1,18 @@
 import { IntOrString } from "@/k8s";
 import { Construct } from "constructs";
+import * as path from "path";
 import { config } from "~/config";
 import {
   Chart,
   ChartProps,
   Deployment,
-  ExternalServiceName,
   Ingress,
   volumeHostPath,
 } from "~/constructs";
 
 interface HomeAssistantChartProps extends ChartProps {
   url: string;
-  mqttServiceName: string;
+  mqttUrl: string;
   credentialsSecretName: string;
   clusterIssuerName?: string;
 }
@@ -23,15 +23,16 @@ export class HomeAssistantChart extends Chart {
     id: string,
     {
       url,
+      mqttUrl,
       credentialsSecretName,
       clusterIssuerName,
-      mqttServiceName,
       ...props
     }: HomeAssistantChartProps
   ) {
     super(scope, id, props);
 
-    ExternalServiceName.fromServiceAttributes(this, "mqtt", mqttServiceName);
+    const cacheDir = (subdir: string) =>
+      path.join(config.cache("home-assistant"), subdir);
 
     const deployment = new Deployment(this, "deployment", {
       selector: { app: `${this.node.id}` },
@@ -74,6 +75,16 @@ export class HomeAssistantChart extends Chart {
         //   ],
         // },
         {
+          name: "mqtt-broker",
+          image: "eclipse-mosquitto",
+          ports: [{ name: "mqtt", containerPort: 1883 }],
+          volumeMounts: [
+            { name: "mqttconfig", mountPath: "/mosquitto/config" },
+            { name: "mqttdata", mountPath: "/mosquitto/data" },
+            { name: "mqttlog", mountPath: "/mosquitto/log" },
+          ],
+        },
+        {
           name: "rtsp-server",
           image: "aler9/rtsp-simple-server",
           env: [{ name: "RTSP_PROTOCOLS", value: "tcp" }],
@@ -84,7 +95,10 @@ export class HomeAssistantChart extends Chart {
         },
       ],
       volumes: [
-        volumeHostPath("config", config.cache("home-assistant/config")),
+        volumeHostPath("config", cacheDir("config")),
+        volumeHostPath("mqttconfig", cacheDir("mqtt/config")),
+        volumeHostPath("mqttdata", cacheDir("mqtt/data")),
+        volumeHostPath("mqttlog", cacheDir("mqtt/log")),
         { name: "localtime", hostPath: { path: "/etc/localtime" } },
       ],
     });
@@ -95,6 +109,12 @@ export class HomeAssistantChart extends Chart {
       path: "/",
       name: service.name,
       port: "console",
+    });
+
+    new Ingress(this, "mqtt-ingress", { hostName: mqttUrl }).addPath({
+      path: "/",
+      name: service.name,
+      port: "mqtt",
     });
   }
 }
