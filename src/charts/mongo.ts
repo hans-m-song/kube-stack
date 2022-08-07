@@ -6,13 +6,13 @@ import {
   ChartProps,
   Deployment,
   Ingress,
+  Secret,
   Service,
   volumeHostPath,
 } from "~/constructs";
 
 interface MongoChartProps extends ChartProps {
   url: string;
-  credentialsSecretName: string;
   clusterIssuerName?: string;
 }
 
@@ -22,10 +22,17 @@ export class MongoChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { url, credentialsSecretName, clusterIssuerName, ...props }: MongoChartProps
+    { url, clusterIssuerName, ...props }: MongoChartProps
   ) {
     super(scope, id, props);
     const selector = { app: "mongo" };
+
+    const credentials = new Secret(this, "credentials", {
+      data: {
+        MINIO_ROOT_USER: config.minio.rootUser,
+        MINIO_ROOT_PASSWORD: config.minio.rootPassword,
+      },
+    });
 
     const deployment = new Deployment(this, "deployment", {
       selector,
@@ -34,7 +41,7 @@ export class MongoChart extends Chart {
           name: "mongo",
           image: "mongo",
           ports: [{ containerPort: 27017, name: "api" }],
-          envFrom: [{ secretRef: { name: credentialsSecretName } }],
+          envFrom: [{ secretRef: { name: credentials.name } }],
           volumeMounts: [{ name: "data", mountPath: "/data/db" }],
         },
         {
@@ -42,7 +49,7 @@ export class MongoChart extends Chart {
           image: "mongo-express",
           command: ["/bin/bash", "-c", "sleep 10s && node app"],
           ports: [{ containerPort: 8081, name: "console" }],
-          envFrom: [{ secretRef: { name: credentialsSecretName } }],
+          envFrom: [{ secretRef: { name: credentials.name } }],
           env: [{ name: "ME_CONFIG_MONGODB_SERVER", value: "localhost" }],
         },
       ],

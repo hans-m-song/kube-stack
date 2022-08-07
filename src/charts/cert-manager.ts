@@ -1,16 +1,10 @@
 import { Construct } from "constructs";
 import { ClusterIssuer } from "@/cert-manager.io";
-import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
+import { ArgoCDApp, Chart, ChartProps, Secret } from "~/constructs";
 import { slug } from "~/utils";
-
-export interface CertManagerDNSTarget {
-  region: string;
-  accessKeyId: string;
-  hostedZoneId: string;
-}
+import { config } from "~/config";
 
 export interface CertManagerChartProps extends ChartProps {
-  email: string;
   targetRevision: string;
 }
 
@@ -21,9 +15,14 @@ export class CertManagerChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { email, targetRevision, ...props }: CertManagerChartProps
+    { targetRevision, ...props }: CertManagerChartProps
   ) {
     super(scope, id, props);
+
+    new Secret(this, "aws-credentials", {
+      metadata: { name: "aws-credentials" },
+      data: { aws_secret_access_key: config.certManager.awsSecretAccessKey },
+    });
 
     new ArgoCDApp(this, "cert-manager", {
       spec: {
@@ -43,24 +42,22 @@ export class CertManagerChart extends Chart {
 
     this.clusterIssuerStg = this.createIssuer(
       "stg",
-      "https://acme-staging-v02.api.letsencrypt.org/directory",
-      email
+      "https://acme-staging-v02.api.letsencrypt.org/directory"
     );
 
     this.clusterIssuerPrd = this.createIssuer(
       "prd",
-      "https://acme-v02.api.letsencrypt.org/directory",
-      email
+      "https://acme-v02.api.letsencrypt.org/directory"
     );
   }
 
-  private createIssuer(name: string, server: string, email: string) {
+  private createIssuer(name: string, server: string) {
     const id = `cluster-issuer-${slug(name)}`;
     return new ClusterIssuer(this, id, {
       spec: {
         acme: {
           server,
-          email,
+          email: config.certManager.email,
           privateKeySecretRef: { name: id },
           solvers: [
             {

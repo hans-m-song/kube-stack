@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "alwaysStrict": true,
+    "esModuleInterop": true,
     "charset": "utf8",
     "declaration": true,
     "experimentalDecorators": true,

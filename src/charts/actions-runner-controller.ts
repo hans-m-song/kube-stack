@@ -11,12 +11,11 @@ import {
   Ingress,
   volumeHostPath,
 } from "~/constructs";
-import path = require("path");
+import path from "path";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
   webhookUrl: string;
-  runnerImage: string;
   targetRevision: string;
   clusterIssuerName?: string;
 }
@@ -28,7 +27,6 @@ export class ActionsRunnerControllerChart extends Chart {
     {
       targets,
       webhookUrl,
-      runnerImage,
       targetRevision,
       clusterIssuerName,
       ...props
@@ -46,6 +44,7 @@ export class ActionsRunnerControllerChart extends Chart {
           chart: "actions-runner-controller",
           helm: {
             values: {
+              authSecret: { create: true, github_token: config.arc.githubPAT },
               githubWebhookServer: {
                 enabled: true,
                 ports: [{ nodePort: 33080 }],
@@ -97,7 +96,9 @@ export class ActionsRunnerControllerChart extends Chart {
             template: {
               spec: {
                 dockerMtu: 1400,
-                image: runnerImage,
+                image: config.prefetch(
+                  "public.ecr.aws/axatol/gha-runner:latest"
+                ),
                 ...(organization && { organization }),
                 ...(repository && { repository }),
                 env: [

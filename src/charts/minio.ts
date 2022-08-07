@@ -2,12 +2,18 @@ import { KubeService } from "@/k8s";
 
 import { Construct } from "constructs";
 import { config } from "~/config";
-import { Chart, ChartProps, Deployment, Ingress, Service } from "~/constructs";
+import {
+  Chart,
+  ChartProps,
+  Deployment,
+  Ingress,
+  Secret,
+  Service,
+} from "~/constructs";
 
 interface MinioChartProps extends ChartProps {
   apiUrl: string;
   url: string;
-  credentialsSecretName: string;
   clusterIssuerName?: string;
 }
 
@@ -17,16 +23,17 @@ export class MinioChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    {
-      apiUrl,
-      url,
-      credentialsSecretName,
-      clusterIssuerName,
-      ...props
-    }: MinioChartProps
+    { apiUrl, url, clusterIssuerName, ...props }: MinioChartProps
   ) {
     super(scope, id, props);
     const selector = { app: "minio" };
+
+    const credentials = new Secret(this, "credentials", {
+      data: {
+        MINIO_ROOT_USER: config.minio.rootUser,
+        MINIO_ROOT_PASSWORD: config.minio.rootPassword,
+      },
+    });
 
     const deployment = new Deployment(this, "deployment", {
       selector,
@@ -39,7 +46,7 @@ export class MinioChart extends Chart {
             { containerPort: 9000, name: "api" },
             { containerPort: 9001, name: "console" },
           ],
-          envFrom: [{ secretRef: { name: credentialsSecretName } }],
+          envFrom: [{ secretRef: { name: credentials.name } }],
           volumeMounts: [{ name: "data", mountPath: "/data" }],
         },
       ],

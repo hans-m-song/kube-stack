@@ -8,6 +8,8 @@ import {
   KubeIngress,
   KubeNamespace,
   KubeNamespaceProps,
+  KubeSecret,
+  KubeSecretProps,
   KubeService,
   KubeServiceProps,
   PodSpec,
@@ -68,7 +70,10 @@ export class Chart extends Cdk8sChart {
   }
 
   generateObjectName(apiObject: ApiObject): string {
-    return Names.toDnsLabel(apiObject, { includeHash: false });
+    // name without hash
+    const name = Names.toDnsLabel(apiObject, { includeHash: false });
+    // name without (redundant) object id
+    return name.replace(RegExp(`^${this.node.id}-`), "");
   }
 }
 
@@ -219,20 +224,22 @@ export class Deployment extends KubeDeployment {
   }
 }
 
-interface ArgoCDAppProps extends Omit<ApplicationProps, "metadata" | "spec"> {
+export interface ArgoCDAppProps
+  extends Omit<ApplicationProps, "metadata" | "spec"> {
   metadata?: Omit<ApplicationProps["metadata"], "namespace">;
-  spec: Omit<ApplicationProps["spec"], "source"> & {
+  spec: Omit<ApplicationProps["spec"], "project" | "source" | "destination"> & {
+    project?: string;
     source: Omit<ApplicationProps["spec"]["source"], "helm"> & {
-      helm: Omit<ApplicationProps["spec"]["source"]["helm"], "values"> & {
-        values: Record<string, unknown>;
+      helm?: Omit<ApplicationProps["spec"]["source"]["helm"], "values"> & {
+        values?: Record<string, unknown>;
       };
     };
+    destination?: ApplicationProps["spec"]["destination"];
   };
 }
 
 export class ArgoCDApp extends Application {
   constructor(scope: Construct, id: string, props: ArgoCDAppProps) {
-    props.spec.source.helm.values;
     super(scope, id, {
       ...props,
       metadata: {
@@ -241,6 +248,7 @@ export class ArgoCDApp extends Application {
         ...props.metadata,
       },
       spec: {
+        project: "default",
         ...props.spec,
         source: {
           ...props.spec.source,
@@ -251,7 +259,34 @@ export class ArgoCDApp extends Application {
               Yaml.stringify(props.spec.source.helm.values),
           },
         },
+        destination: props.spec.destination ?? {
+          name: "in-cluster",
+          namespace: Chart.of(scope).namespace,
+        },
       },
     });
+  }
+}
+
+export interface SecretProps extends Omit<KubeSecretProps, "data"> {
+  data?: Record<string, unknown>;
+}
+
+export class Secret extends KubeSecret {
+  constructor(scope: Construct, id: string, props: SecretProps) {
+    super(scope, id, {
+      ...props,
+      data:
+        props.data &&
+        Object.entries(props.data).reduce(
+          (data, [key, value]) => ({ ...data, [key]: Secret.encode(value) }),
+          {} as Record<string, string>
+        ),
+    });
+  }
+
+  static encode(input: unknown): string {
+    const value = typeof input !== "string" ? JSON.stringify(input) : input;
+    return Buffer.from(value).toString("base64");
   }
 }

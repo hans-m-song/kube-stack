@@ -7,24 +7,28 @@ import { DynamicDNSChart } from "./charts/dynamic-dns";
 import { PrefetchChart } from "./charts/prefetch";
 import { HelloWorldChart } from "./charts/hello-world";
 import { CertManagerChart } from "./charts/cert-manager";
-import { config, Image, registeredUrls } from "./config";
+import { config, prefetchImages, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
 import { HomeAssistantChart } from "./charts/home-assistant";
 import { PortainerChart } from "./charts/portainer";
 import { PrometheusChart } from "./charts/prometheus";
+import { MqttChart } from "./charts/mqtt";
+import { RegistryChart } from "./charts/registry";
+import { ArgoCDChart } from "./charts/argocd";
 
 const app = new App({ outdir: "manifests" });
 
 const certManagers = new CertManagerChart(app, "cert-manager", {
   namespace: "cert-manager",
-  email: config.certManagerEmail,
   targetRevision: "v1.9.1",
 });
 
-new PrefetchChart(app, "prefetch", {
-  namespace: "prefetch",
-  images: Object.values(Image),
+new ArgoCDChart(app, "argocd", {
+  url: config.url("argocd.k8s", true),
+  namespace: "argocd",
+  targetRevision: "4.10.5",
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 new PrometheusChart(app, "prometheus", {
@@ -51,7 +55,6 @@ new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
   webhookUrl: config.url("arc.k8s", true),
-  runnerImage: "public.ecr.aws/t4g8t3e5/gha-runner:latest",
   targetRevision: "0.20.2",
   targets: [
     // repos
@@ -68,37 +71,51 @@ const minio = new MinioChart(app, "minio", {
   namespace: "minio",
   apiUrl: config.url("api.minio.k8s", true),
   url: config.url("minio.k8s", true),
-  credentialsSecretName: "credentials",
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 new MongoChart(app, "mongo", {
   namespace: "mongo",
   url: config.url("mongo.k8s"),
-  credentialsSecretName: "credentials",
+});
+
+new RegistryChart(app, "registry", {
+  namespace: "registry",
+  minioServiceName: `${minio.svc.name}.${minio.namespace}`,
+  url: config.url("registry.k8s", true),
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+});
+
+new MqttChart(app, "mqtt", {
+  namespace: "mqtt",
+  nodePort: 31883,
 });
 
 new HomeAssistantChart(app, "hass", {
   namespace: "home-assistant",
   url: config.url("hass.k8s", true),
-  mqttUrl: config.url("mqtt.hass.k8s"),
-  credentialsSecretName: "credentials",
+  mqttUrl: config.url("mqtt.k8s"),
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 new HuiShengChart(app, "huisheng", {
   namespace: "huisheng",
-  cachePath: config.cache("huisheng"),
-  image: Image.Huisheng,
-  credentialsSecretName: "credentials",
   botPrefix: ">",
   minioServiceName: `${minio.svc.name}.${minio.namespace}`,
 });
 
-// this should go last to pick up all the registered domains
+// these should go last to pick up all the registered domains
+
+new PrefetchChart(app, "prefetch", {
+  namespace: "prefetch",
+  images: [
+    ...prefetchImages,
+    "public.ecr.aws/axatol/zeversolar-monitor:latest",
+  ],
+});
+
 new DynamicDNSChart(app, "ddns", {
   namespace: "ddns",
-  credentialsSecretName: "credentials",
   targets: registeredUrls,
 });
 

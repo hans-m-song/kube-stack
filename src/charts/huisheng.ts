@@ -1,17 +1,16 @@
 import { Construct } from "constructs";
+import { config } from "~/config";
 import {
   Chart,
   ChartProps,
   Deployment,
   ExternalServiceName,
+  Secret,
   volumeHostPath,
 } from "~/constructs";
 
 export interface HuiShengChartProps extends ChartProps {
-  image: string;
-  credentialsSecretName: string;
   minioServiceName: string;
-  cachePath: string;
   botPrefix?: string;
 }
 
@@ -19,17 +18,20 @@ export class HuiShengChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    {
-      image,
-      credentialsSecretName,
-      minioServiceName,
-      cachePath,
-      botPrefix,
-      ...props
-    }: HuiShengChartProps
+    { minioServiceName, botPrefix, ...props }: HuiShengChartProps
   ) {
     super(scope, id, props);
     const selector = { app: "huisheng" };
+
+    const credentials = new Secret(this, "credentials", {
+      data: {
+        DISCORD_BOT_TOKEN: config.huisheng.discordBotToken,
+        DISCORD_CLIENT_ID: config.huisheng.discordClientId,
+        MINIO_ACCESS_KEY: config.huisheng.minioAccessKey,
+        MINIO_SECRET_KEY: config.huisheng.minioSecretKey,
+        YOUTUBE_API_KEY: config.huisheng.youtubeApiKey,
+      },
+    });
 
     const { name: minioEndpoint } = ExternalServiceName.fromServiceAttributes(
       this,
@@ -42,7 +44,7 @@ export class HuiShengChart extends Chart {
       containers: [
         {
           name: "huisheng",
-          image,
+          image: config.prefetch("public.ecr.aws/axatol/huisheng:latest"),
           securityContext: { capabilities: { add: ["SYS_NICE"] } },
           env: [
             { name: "DISCORD_BOT_PREFIX", value: botPrefix ?? ">" },
@@ -51,11 +53,11 @@ export class HuiShengChart extends Chart {
             { name: "MINIO_ENDPOINT_PORT", value: "9000" },
             { name: "MINIO_ENDPOINT_SSL", value: "false" },
           ],
-          envFrom: [{ secretRef: { name: credentialsSecretName } }],
+          envFrom: [{ secretRef: { name: credentials.name } }],
           volumeMounts: [{ name: "data", mountPath: "/data" }],
         },
       ],
-      volumes: [volumeHostPath("data", cachePath)],
+      volumes: [volumeHostPath("data", config.cache("huisheng"))],
     });
   }
 }

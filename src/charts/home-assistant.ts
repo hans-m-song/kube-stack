@@ -13,7 +13,6 @@ import {
 interface HomeAssistantChartProps extends ChartProps {
   url: string;
   mqttUrl: string;
-  credentialsSecretName: string;
   clusterIssuerName?: string;
 }
 
@@ -21,15 +20,16 @@ export class HomeAssistantChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    {
-      url,
-      mqttUrl,
-      credentialsSecretName,
-      clusterIssuerName,
-      ...props
-    }: HomeAssistantChartProps
+    { url, mqttUrl, clusterIssuerName, ...props }: HomeAssistantChartProps
   ) {
     super(scope, id, props);
+
+    // const credentials = new Secret(this, "credentials", {
+    //   data: {
+    //     EUFY_USERNAME: config.hass.eufyUsername,
+    //     EUFY_PASSWORD: config.hass.eufyPassword,
+    //   }
+    // })
 
     const cacheDir = (subdir: string) =>
       path.join(config.cache("home-assistant"), subdir);
@@ -70,20 +70,10 @@ export class HomeAssistantChart extends Chart {
         //   env: [
         //     { name: "COUNTRY", value: "AU" },
         //     { name: "DEBUG", value: "1" },
-        //     envVarSecretRef(credentialsSecretName, "EUFY_USERNAME", "USERNAME"),
-        //     envVarSecretRef(credentialsSecretName, "EUFY_PASSWORD", "PASSWORD"),
+        //     envVarSecretRef(credentials.name, "EUFY_USERNAME", "USERNAME"),
+        //     envVarSecretRef(credentials.name, "EUFY_PASSWORD", "PASSWORD"),
         //   ],
         // },
-        {
-          name: "mqtt-broker",
-          image: "eclipse-mosquitto",
-          ports: [{ name: "mqtt", containerPort: 1883 }],
-          volumeMounts: [
-            { name: "mqttconfig", mountPath: "/mosquitto/config" },
-            { name: "mqttdata", mountPath: "/mosquitto/data" },
-            { name: "mqttlog", mountPath: "/mosquitto/log" },
-          ],
-        },
         {
           name: "rtsp-server",
           image: "aler9/rtsp-simple-server",
@@ -96,9 +86,6 @@ export class HomeAssistantChart extends Chart {
       ],
       volumes: [
         volumeHostPath("config", cacheDir("config")),
-        volumeHostPath("mqttconfig", cacheDir("mqtt/config")),
-        volumeHostPath("mqttdata", cacheDir("mqtt/data")),
-        volumeHostPath("mqttlog", cacheDir("mqtt/log")),
         { name: "localtime", hostPath: { path: "/etc/localtime" } },
       ],
     });
@@ -109,12 +96,6 @@ export class HomeAssistantChart extends Chart {
       path: "/",
       name: service.name,
       port: "console",
-    });
-
-    new Ingress(this, "mqtt-ingress", { hostName: mqttUrl }).addPath({
-      path: "/",
-      name: service.name,
-      port: "mqtt",
     });
   }
 }

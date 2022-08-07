@@ -27,7 +27,7 @@ export class PrefetchChart extends Chart {
             template: {
               spec: {
                 restartPolicy: "OnFailure",
-                containers: images.map((image) => ({
+                containers: Array.from(new Set(images)).map((image) => ({
                   name: slug(image),
                   image,
                   command: ["true"],

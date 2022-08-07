@@ -8,3 +8,9 @@ env.*
 *.properties
 manifests
 create-secrets.sh
+*.iam.json
+bin
+pre-up.sh
+post-up.sh
+pre-apply.sh
+post-apply.sh

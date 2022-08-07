@@ -1,10 +1,10 @@
 import { JsonPatch } from "cdk8s";
 import { Construct } from "constructs";
 import { KubeConfigMap, KubeCronJob } from "@/k8s";
-import { Chart, ChartProps } from "~/constructs";
+import { config } from "~/config";
+import { Chart, ChartProps, Secret } from "~/constructs";
 
 export interface DynamicDNSChartProps extends ChartProps {
-  credentialsSecretName: string;
   targets?: string[];
 }
 
@@ -15,9 +15,18 @@ export class DynamicDNSChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { credentialsSecretName, targets, ...props }: DynamicDNSChartProps
+    { targets, ...props }: DynamicDNSChartProps
   ) {
     super(scope, id, props);
+
+    const credentials = new Secret(this, "credentials", {
+      data: {
+        DDNSR53_CREDENTIALS_ACCESSKEYID: config.ddns.r53CredentialsAccesskeyid,
+        DDNSR53_CREDENTIALS_SECRETACCESSKEY:
+          config.ddns.r53CredentialsSecretaccesskey,
+        DDNSR53_ROUTE53_HOSTEDZONEID: config.ddns.r53Route53Hostedzoneid,
+      },
+    });
 
     this.config = new KubeConfigMap(this, "config", {
       data: {
@@ -47,7 +56,7 @@ export class DynamicDNSChart extends Chart {
                     image: "crazymax/ddns-route53",
                     envFrom: [
                       { configMapRef: { name: this.config.name } },
-                      { secretRef: { name: credentialsSecretName } },
+                      { secretRef: { name: credentials.name } },
                     ],
                   },
                 ],
