@@ -51,16 +51,6 @@ export class PrometheusChart extends Chart {
                   ],
                 },
               },
-              prometheus: {
-                ingress: {
-                  enabled: true,
-                  annotations: {
-                    "kubernetes.io/ingress.class": "traefik",
-                  },
-                  hosts: [prometheusUrl],
-                  paths: ["/"],
-                },
-              },
             },
           },
         },

@@ -83,6 +83,19 @@ export const config = {
     initdbRootUsername: assertEnv("MONGO_INITDB_ROOT_USERNAME"),
   },
 
+  nfs: {
+    serverIP: assertEnv("NFS_SERVER_IP"),
+    exportPath: assertEnv("NFS_EXPORT_PATH"),
+  },
+
+  postgres: {
+    user: assertEnv("POSTGRES_USER"),
+    password: assertEnv("POSTGRES_PASSWORD"),
+    db: assertEnv("POSTGRES_DB"),
+    webEmail: assertEnv("POSTGRES_WEB_EMAIL"),
+    webPassword: assertEnv("POSTGRES_WEB_PASSWORD"),
+  },
+
   registry: {
     s3AccessKey: assertEnv("REGISTRY_S3_ACCESS_KEY_ID"),
     s3SecretKey: assertEnv("REGISTRY_S3_SECRET_ACCESS_KEY"),

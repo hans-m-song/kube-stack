@@ -27,7 +27,6 @@ export class ArgoCDChart extends Chart {
               dex: { enabled: false },
               server: {
                 extraArgs: ["--insecure"],
-                config: { "accounts.argocd": "login" },
                 ingress: {
                   enabled: true,
                   annotations: {
@@ -38,6 +37,11 @@ export class ArgoCDChart extends Chart {
                   },
                   hosts: [url],
                   tls: [{ secretName: `${slug(url)}-tls`, hosts: [url] }],
+                },
+                config: { "accounts.argocd": "login" },
+                rbacConfig: {
+                  "policy.default": "role:readonly",
+                  "policy.csv": ["g, argocd, role:admin"].join("\n"),
                 },
               },
             },

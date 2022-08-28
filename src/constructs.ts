@@ -41,6 +41,11 @@ export const volumeHostPath = (
   type = "DirectoryOrCreate"
 ): Volume => ({ name, hostPath: { path: hostPath, type } });
 
+export const volumePVC = (name: string, claimName: string): Volume => ({
+  name,
+  persistentVolumeClaim: { claimName },
+});
+
 export interface NamespaceProps extends KubeNamespaceProps {
   name: string;
 }
@@ -57,16 +62,23 @@ export class Namespace extends KubeNamespace {
 
 export interface ChartProps extends Cdk8sChartProps {
   namespace: string;
+  createNamespace?: boolean;
 }
 
 export class Chart extends Cdk8sChart {
   namespace: string;
-  ns: Namespace;
+  ns?: Namespace;
 
-  constructor(scope: Construct, id: string, props: ChartProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    { createNamespace = true, ...props }: ChartProps
+  ) {
     super(scope, id, props);
     this.namespace = props.namespace;
-    this.ns = new Namespace(this, "namespace", { name: props.namespace });
+    if (createNamespace) {
+      this.ns = new Namespace(this, "namespace", { name: props.namespace });
+    }
   }
 
   generateObjectName(apiObject: ApiObject): string {

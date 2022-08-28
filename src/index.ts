@@ -16,8 +16,23 @@ import { PrometheusChart } from "./charts/prometheus";
 import { MqttChart } from "./charts/mqtt";
 import { RegistryChart } from "./charts/registry";
 import { ArgoCDChart } from "./charts/argocd";
+import { NFSProvisionerChart } from "./charts/nfs-provisioner";
+import { PostgresChart } from "./charts/postgres";
 
 const app = new App({ outdir: "manifests" });
+
+const nfs = new NFSProvisionerChart(app, "nfs-provisioner", {
+  namespace: "kube-system",
+  targetRevision: "4.0.17",
+  nfsServer: config.nfs.serverIP,
+  nfsPath: config.nfs.exportPath,
+});
+
+new PostgresChart(app, "postgres", {
+  namespace: "postgres",
+  nfs,
+  url: config.url("psql.k8s"),
+});
 
 const certManagers = new CertManagerChart(app, "cert-manager", {
   namespace: "cert-manager",
@@ -61,9 +76,10 @@ new ActionsRunnerControllerChart(app, "arc", {
     { repository: "hans-m-song/docker" },
     { repository: "hans-m-song/huisheng" },
     { repository: "hans-m-song/semantic-release-gha" },
-    { repository: "hans-m-song/zeversolar-monitor" },
+    { repository: "hans-m-song/home-assistant-integrations" },
     // organisations
     { organization: "tunes-anywhere" },
+    { organization: "zidle-studio" },
   ],
 });
 
@@ -83,7 +99,7 @@ new RegistryChart(app, "registry", {
   namespace: "registry",
   minioServiceName: `${minio.svc.name}.${minio.namespace}`,
   url: config.url("registry.k8s", true),
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  // clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 new MqttChart(app, "mqtt", {
@@ -110,7 +126,7 @@ new PrefetchChart(app, "prefetch", {
   namespace: "prefetch",
   images: [
     ...prefetchImages,
-    "public.ecr.aws/axatol/zeversolar-monitor:latest",
+    "public.ecr.aws/axatol/home-assistant-integrations:latest",
   ],
 });
 
