@@ -28,12 +28,19 @@ export class NFSProvisionerChart extends Chart {
           targetRevision,
           helm: {
             values: {
-              storageClass: {
-                name: "nfs",
+              nfs: {
+                path: this.nfs.path,
+                server: this.nfs.server,
                 reclaimPolicy: "Retain",
+              },
+              storageClass: {
+                create: true,
+                name: "nfs-local",
+                allowVolumeExpansion: true,
+                reclaimPolicy: "Delete",
+                onDelete: "retain",
                 pathPattern: "${.PVC.namespace}-${.PVC.name}",
               },
-              nfs: this.nfs,
             },
           },
         },
@@ -53,7 +60,7 @@ export class NFSProvisionerChart extends Chart {
   ) {
     const {
       accessModes = ["ReadWriteOnce"],
-      storageClassName = "nfs",
+      storageClassName = "nfs-local",
       volumeMode = "Filesystem",
     } = props;
     const storage = Quantity.fromString(capacity);

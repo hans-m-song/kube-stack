@@ -4,20 +4,15 @@ import {
   RunnerDeployment,
 } from "@/actions.summerwind.dev";
 import { config } from "~/config";
-import {
-  ArgoCDApp,
-  Chart,
-  ChartProps,
-  Ingress,
-  volumeHostPath,
-} from "~/constructs";
-import path from "path";
+import { ArgoCDApp, Chart, ChartProps, Ingress, volumePVC } from "~/constructs";
+import { NFSProvisionerChart } from "./nfs-provisioner";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
   webhookUrl: string;
   targetRevision: string;
   clusterIssuerName?: string;
+  nfs: NFSProvisionerChart;
 }
 
 export class ActionsRunnerControllerChart extends Chart {
@@ -25,6 +20,7 @@ export class ActionsRunnerControllerChart extends Chart {
     scope: Construct,
     id: string,
     {
+      nfs,
       targets,
       webhookUrl,
       targetRevision,
@@ -77,10 +73,6 @@ export class ActionsRunnerControllerChart extends Chart {
       port: "http",
     });
 
-    const runnerCache = (...names: string[]) =>
-      path.join("/home/runner/.cache", ...names);
-    const cacheDir = (...names: string[]) => config.cache("arc", ...names);
-
     targets.map(({ organization, repository }) => {
       if ((!organization && !repository) || (organization && repository)) {
         throw new Error(
@@ -88,39 +80,49 @@ export class ActionsRunnerControllerChart extends Chart {
         );
       }
 
-      return new RunnerDeployment(
-        this,
-        `${(organization ?? repository ?? "").replace(/\//g, "-")}-rd`,
-        {
-          spec: {
-            template: {
-              spec: {
-                dockerMtu: 1400,
-                image: config.prefetch(
-                  "public.ecr.aws/axatol/gha-runner:latest"
+      const id = (organization ?? repository ?? "").replace(/\//g, "-");
+      return new RunnerDeployment(this, `${id}-rd`, {
+        spec: {
+          template: {
+            spec: {
+              dockerMtu: 1400,
+              image: config.prefetch("public.ecr.aws/axatol/gha-runner:latest"),
+              ...(organization && { organization }),
+              ...(repository && { repository }),
+              env: [
+                // go
+                {
+                  name: "GOPATH",
+                  value: "/home/runner/.cache/go",
+                },
+                {
+                  name: "GOMODCACHE",
+                  value: "/home/runner/.cache/go/pkg/mod",
+                },
+                // node
+                {
+                  name: "YARN_CACHE_FOLDER",
+                  value: "/home/runner/.cache/yarn",
+                },
+              ],
+              volumeMounts: [
+                { name: "go-cache", mountPath: "/home/runner/.cache/go" },
+                { name: "yarn-cache", mountPath: "/home/runner/.cache/yarn" },
+              ],
+              volumes: [
+                volumePVC(
+                  "go-cache",
+                  nfs.createPVC(this, `${id}-go-cache`, "5Gi").name
                 ),
-                ...(organization && { organization }),
-                ...(repository && { repository }),
-                env: [
-                  // go
-                  { name: "GOPATH", value: runnerCache("go") },
-                  { name: "GOMODCACHE", value: runnerCache("go/pkg/mod") },
-                  // node
-                  { name: "YARN_CACHE_FOLDER", value: runnerCache("yarn") },
-                ],
-                volumeMounts: [
-                  { name: "go-cache", mountPath: runnerCache("go") },
-                  { name: "yarn-cache", mountPath: runnerCache("yarn") },
-                ],
-                volumes: [
-                  volumeHostPath("go-cache", cacheDir("go-cache")),
-                  volumeHostPath("yarn-cache", cacheDir("yarn-cache")),
-                ],
-              },
+                volumePVC(
+                  "yarn-cache",
+                  nfs.createPVC(this, `${id}-yarn-cache`, "5Gi").name
+                ),
+              ],
             },
           },
-        }
-      );
+        },
+      });
     });
   }
 }

@@ -68,6 +68,7 @@ new HelloWorldChart(app, "hello-world", {
 
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
+  nfs,
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
   webhookUrl: config.url("arc.k8s", true),
   targetRevision: "0.20.2",
