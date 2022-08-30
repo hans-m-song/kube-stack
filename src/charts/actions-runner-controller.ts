@@ -48,10 +48,6 @@ export class ActionsRunnerControllerChart extends Chart {
             },
           },
         },
-        destination: {
-          namespace: "actions-runner-system",
-          name: "in-cluster",
-        },
       },
     });
 

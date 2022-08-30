@@ -9,9 +9,12 @@ import {
   Ingress,
   Secret,
   Service,
+  volumePVC,
 } from "~/constructs";
+import { NFSProvisionerChart } from "./nfs-provisioner";
 
 interface MinioChartProps extends ChartProps {
+  nfs: NFSProvisionerChart;
   apiUrl: string;
   url: string;
   clusterIssuerName?: string;
@@ -23,7 +26,7 @@ export class MinioChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { apiUrl, url, clusterIssuerName, ...props }: MinioChartProps
+    { nfs, apiUrl, url, clusterIssuerName, ...props }: MinioChartProps
   ) {
     super(scope, id, props);
     const selector = { app: "minio" };
@@ -50,12 +53,7 @@ export class MinioChart extends Chart {
           volumeMounts: [{ name: "data", mountPath: "/data" }],
         },
       ],
-      volumes: [
-        {
-          name: "data",
-          hostPath: { path: config.cache("minio"), type: "DirectoryOrCreate" },
-        },
-      ],
+      volumes: [volumePVC("data", nfs.createPVC(this, "data", "20Gi").name)],
     });
 
     this.svc = Service.fromDeployment(this, deployment);

@@ -3,7 +3,6 @@ import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
 import { slug } from "~/utils";
 
 interface PrometheusChartProps extends ChartProps {
-  prometheusUrl: string;
   grafanaUrl: string;
   targetRevision: string;
   clusterIssuerName?: string;
@@ -15,7 +14,6 @@ export class PrometheusChart extends Chart {
     id: string,
     {
       targetRevision,
-      prometheusUrl,
       grafanaUrl,
       clusterIssuerName,
       ...props
@@ -53,10 +51,6 @@ export class PrometheusChart extends Chart {
               },
             },
           },
-        },
-        destination: {
-          name: "in-cluster",
-          namespace: "monitoring",
         },
       },
     });

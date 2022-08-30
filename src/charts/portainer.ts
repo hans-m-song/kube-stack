@@ -65,10 +65,6 @@ export class PortainerChart extends Chart {
             },
           },
         },
-        destination: {
-          namespace: "portainer",
-          name: "in-cluster",
-        },
       },
     });
   }

@@ -49,7 +49,6 @@ new ArgoCDChart(app, "argocd", {
 new PrometheusChart(app, "prometheus", {
   namespace: "monitoring",
   grafanaUrl: config.url("grafana.k8s", true),
-  prometheusUrl: config.url("prometheus.k8s"),
   targetRevision: "39.4.0",
 });
 
@@ -89,6 +88,7 @@ const minio = new MinioChart(app, "minio", {
   apiUrl: config.url("api.minio.k8s", true),
   url: config.url("minio.k8s", true),
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  nfs,
 });
 
 new MongoChart(app, "mongo", {

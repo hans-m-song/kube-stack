@@ -33,10 +33,6 @@ export class CertManagerChart extends Chart {
           chart: "cert-manager",
           helm: { values: { installCRDs: true } },
         },
-        destination: {
-          name: "in-cluster",
-          namespace: "cert-manager",
-        },
       },
     });
 
