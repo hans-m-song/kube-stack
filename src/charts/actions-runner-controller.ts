@@ -69,6 +69,9 @@ export class ActionsRunnerControllerChart extends Chart {
       port: "http",
     });
 
+    const goPVC = nfs.createPVC(this, "go-cache", "5Gi");
+    const yarnPVC = nfs.createPVC(this, "yarn-cache", "5Gi");
+
     targets.map(({ organization, repository }) => {
       if ((!organization && !repository) || (organization && repository)) {
         throw new Error(
@@ -82,6 +85,7 @@ export class ActionsRunnerControllerChart extends Chart {
           template: {
             spec: {
               dockerMtu: 1400,
+              dockerdWithinRunnerContainer: true,
               image: config.prefetch("public.ecr.aws/axatol/gha-runner:latest"),
               ...(organization && { organization }),
               ...(repository && { repository }),
@@ -106,14 +110,8 @@ export class ActionsRunnerControllerChart extends Chart {
                 { name: "yarn-cache", mountPath: "/home/runner/.cache/yarn" },
               ],
               volumes: [
-                volumePVC(
-                  "go-cache",
-                  nfs.createPVC(this, `${id}-go-cache`, "5Gi").name
-                ),
-                volumePVC(
-                  "yarn-cache",
-                  nfs.createPVC(this, `${id}-yarn-cache`, "5Gi").name
-                ),
+                volumePVC("go-cache", goPVC.name),
+                volumePVC("yarn-cache", yarnPVC.name),
               ],
             },
           },

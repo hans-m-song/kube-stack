@@ -11,7 +11,7 @@ import { config, prefetchImages, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
 import { HomeAssistantChart } from "./charts/home-assistant";
-import { PortainerChart } from "./charts/portainer";
+// import { PortainerChart } from "./charts/portainer";
 import { PrometheusChart } from "./charts/prometheus";
 import { MqttChart } from "./charts/mqtt";
 import { RegistryChart } from "./charts/registry";
@@ -52,12 +52,12 @@ new PrometheusChart(app, "prometheus", {
   targetRevision: "39.4.0",
 });
 
-new PortainerChart(app, "portainer", {
-  namespace: "portainer",
-  url: config.url("portainer.k8s", true),
-  targetRevision: "1.0.33",
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
-});
+// new PortainerChart(app, "portainer", {
+//   namespace: "portainer",
+//   url: config.url("portainer.k8s", true),
+//   targetRevision: "1.0.33",
+//   clusterIssuerName: certManagers.clusterIssuerPrd.name,
+// });
 
 new HelloWorldChart(app, "hello-world", {
   namespace: "hello",
@@ -74,11 +74,10 @@ new ActionsRunnerControllerChart(app, "arc", {
   targets: [
     // repos
     { repository: "hans-m-song/docker" },
-    { repository: "hans-m-song/huisheng" },
-    { repository: "hans-m-song/semantic-release-gha" },
+    { repository: "hans-m-song/kube-stack" },
     { repository: "hans-m-song/home-assistant-integrations" },
+    { repository: "hans-m-song/huisheng" },
     // organisations
-    { organization: "tunes-anywhere" },
     { organization: "zidle-studio" },
   ],
 });

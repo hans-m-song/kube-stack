@@ -1,4 +1,4 @@
-import { KubePersistentVolumeClaim, NfsVolumeSource, Quantity } from "@/k8s";
+import { KubePersistentVolumeClaim, Quantity } from "@/k8s";
 import { Construct } from "constructs";
 import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
 
@@ -9,15 +9,12 @@ export interface NFSProvisionerChartProps extends ChartProps {
 }
 
 export class NFSProvisionerChart extends Chart {
-  private nfs: NfsVolumeSource;
-
   constructor(
     scope: Construct,
     id: string,
     { targetRevision, nfsServer, nfsPath, ...props }: NFSProvisionerChartProps
   ) {
     super(scope, id, { ...props, createNamespace: false });
-    this.nfs = { server: nfsServer, path: nfsPath };
 
     new ArgoCDApp(this, "nfs-subdir-external-provisioner", {
       spec: {
@@ -29,8 +26,8 @@ export class NFSProvisionerChart extends Chart {
           helm: {
             values: {
               nfs: {
-                path: this.nfs.path,
-                server: this.nfs.server,
+                path: nfsPath,
+                server: nfsServer,
                 reclaimPolicy: "Retain",
               },
               storageClass: {
@@ -38,8 +35,10 @@ export class NFSProvisionerChart extends Chart {
                 name: "nfs-local",
                 allowVolumeExpansion: true,
                 reclaimPolicy: "Delete",
-                onDelete: "retain",
+                archiveOnDelete: false,
+                onDelete: "delete",
                 pathPattern: "${.PVC.namespace}-${.PVC.name}",
+                accessModes: "ReadWriteOnce",
               },
             },
           },

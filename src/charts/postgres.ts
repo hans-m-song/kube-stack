@@ -44,15 +44,13 @@ export class PostgresChart extends Chart {
           name: "postgres",
           image: "postgres:14",
           env: [
-            { name: "PGDATA", value: config.cache("postgres") },
+            { name: "PGDATA", value: "/postgres/data" },
             envVarSecretRef(credentials.name, "POSTGRES_USER"),
             envVarSecretRef(credentials.name, "POSTGRES_PASSWORD"),
             envVarSecretRef(credentials.name, "POSTGRES_DB"),
           ],
           ports: [{ containerPort: 5432, name: "tunnel" }],
-          volumeMounts: [
-            { name: "pgdata", mountPath: "/var/lib/postgresql/data" },
-          ],
+          volumeMounts: [{ name: "pgdata", mountPath: "/postgres" }],
         },
         {
           name: "pgadmin",
