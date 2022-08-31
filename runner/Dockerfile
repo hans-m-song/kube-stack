@@ -46,4 +46,4 @@ RUN sudo mkdir -p ${NVM_DIR} \
   && export PATH=/usr/local/nvm/versions/node/$(nvm current)/bin:$PATH
 
 # persist path
-RUN echo $PATH | sudo tee --append /etc/environment
+RUN echo PATH=$PATH | sudo tee --append /etc/environment
