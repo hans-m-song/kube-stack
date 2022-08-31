@@ -13,7 +13,9 @@
     "watch": "concurrently -r \"yarn:src:watch\" \"yarn:types:watch\"",
     "synth": "node dist/index.js",
     "build": "yarn types:compile && yarn src:compile && yarn synth",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\"",
+    "diff": "kubectl diff -f manifests --server-side > pending.diff",
+    "clean": "rm -rf manifests"
   },
   "dependencies": {
     "cdk8s": "^2.3.17",
