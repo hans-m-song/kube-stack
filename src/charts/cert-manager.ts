@@ -1,14 +1,24 @@
 import { Construct } from "constructs";
 import { ClusterIssuer } from "@/cert-manager.io";
-import { ArgoCDApp, Chart, ChartProps, Secret } from "~/constructs";
+import { Chart, ChartProps, Secret } from "~/constructs";
 import { slug } from "~/utils";
 import { config } from "~/config";
+import { ArgoCDChart } from "./argocd";
+
+const CERT_MANAGER_CHART_SYMBOL = Symbol.for("@kube-stack/charts.cert-manager");
 
 export interface CertManagerChartProps extends ChartProps {
   targetRevision: string;
 }
 
 export class CertManagerChart extends Chart {
+  static of(construct: Construct): CertManagerChart {
+    return Chart.search(
+      construct,
+      CERT_MANAGER_CHART_SYMBOL
+    ) as CertManagerChart;
+  }
+
   clusterIssuerPrd: ClusterIssuer;
   clusterIssuerStg: ClusterIssuer;
 
@@ -18,23 +28,22 @@ export class CertManagerChart extends Chart {
     { targetRevision, ...props }: CertManagerChartProps
   ) {
     super(scope, id, props);
+    Object.defineProperty(this, CERT_MANAGER_CHART_SYMBOL, { value: true });
 
     new Secret(this, "aws-credentials", {
       metadata: { name: "aws-credentials" },
       data: { aws_secret_access_key: config.certManager.awsSecretAccessKey },
     });
 
-    new ArgoCDApp(this, "cert-manager", {
-      spec: {
-        project: "default",
-        source: {
-          targetRevision,
-          repoUrl: "https://charts.jetstack.io",
-          chart: "cert-manager",
-          helm: { values: { installCRDs: true } },
-        },
+    ArgoCDChart.of(this).helmApp(
+      this,
+      {
+        targetRevision,
+        repoUrl: "https://charts.jetstack.io",
+        chart: "cert-manager",
       },
-    });
+      { installCRDs: true }
+    );
 
     this.clusterIssuerStg = this.createIssuer(
       "stg",

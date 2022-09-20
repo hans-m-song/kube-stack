@@ -6,7 +6,9 @@ import {
   Chart,
   ChartProps,
   Deployment,
+  envVarSecretRef,
   Ingress,
+  Secret,
   volumeHostPath,
 } from "~/constructs";
 
@@ -24,15 +26,34 @@ export class HomeAssistantChart extends Chart {
   ) {
     super(scope, id, props);
 
-    // const credentials = new Secret(this, "credentials", {
-    //   data: {
-    //     EUFY_USERNAME: config.hass.eufyUsername,
-    //     EUFY_PASSWORD: config.hass.eufyPassword,
-    //   }
-    // })
+    const credentials = new Secret(this, "credentials", {
+      data: {
+        EUFY_USERNAME: config.hass.eufyUsername,
+        EUFY_PASSWORD: config.hass.eufyPassword,
+      },
+    });
 
     const cacheDir = (subdir: string) =>
       path.join(config.cache("home-assistant"), subdir);
+
+    const eufy = new Deployment(this, "eufy-security", {
+      selector: { app: "eufy-security" },
+      containers: [
+        {
+          name: "eufy-security",
+          image: "bropat/eufy-security-ws:0.9.2",
+          ports: [{ name: "ws", containerPort: 3000 }],
+          env: [
+            { name: "COUNTRY", value: "AU" },
+            { name: "DEBUG", value: "1" },
+            envVarSecretRef(credentials.name, "EUFY_USERNAME", "USERNAME"),
+            envVarSecretRef(credentials.name, "EUFY_PASSWORD", "PASSWORD"),
+          ],
+        },
+      ],
+    });
+
+    eufy.getService(this);
 
     const deployment = new Deployment(this, "deployment", {
       selector: { app: `${this.node.id}` },
@@ -63,17 +84,6 @@ export class HomeAssistantChart extends Chart {
         },
 
         // addons
-        // {
-        //   name: "eufy-security",
-        //   image: "bropat/eufy-security-ws:0.9.2",
-        //   ports: [{ name: "ws", containerPort: 3000 }],
-        //   env: [
-        //     { name: "COUNTRY", value: "AU" },
-        //     { name: "DEBUG", value: "1" },
-        //     envVarSecretRef(credentials.name, "EUFY_USERNAME", "USERNAME"),
-        //     envVarSecretRef(credentials.name, "EUFY_PASSWORD", "PASSWORD"),
-        //   ],
-        // },
         {
           name: "rtsp-server",
           image: "aler9/rtsp-simple-server",

@@ -13,7 +13,6 @@ import {
 import { NFSProvisionerChart } from "./nfs-provisioner";
 
 export interface PostgresChartProps extends ChartProps {
-  nfs: NFSProvisionerChart;
   url: string;
 }
 
@@ -23,9 +22,10 @@ export class PostgresChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { nfs, url, ...props }: PostgresChartProps
+    { url, ...props }: PostgresChartProps
   ) {
     super(scope, id, props);
+    const nfs = NFSProvisionerChart.of(this);
 
     const credentials = new Secret(this, "credentials", {
       data: {
@@ -37,20 +37,25 @@ export class PostgresChart extends Chart {
       },
     });
 
-    const deployment = new Deployment(this, "deployment", {
+    const pgdataPVC = nfs.createPVC(this, "pgdata", "1Gi");
+    const pgadminPVC = nfs.createPVC(this, "pgadmin", "1Gi");
+
+    const deployment = new Deployment(this, "postgres", {
       selector: { app: "postgres" },
       containers: [
         {
           name: "postgres",
           image: "postgres:14",
           env: [
-            { name: "PGDATA", value: "/postgres/data" },
+            { name: "PGDATA", value: "/var/lib/postgresql/data/pgdata" },
             envVarSecretRef(credentials.name, "POSTGRES_USER"),
             envVarSecretRef(credentials.name, "POSTGRES_PASSWORD"),
             envVarSecretRef(credentials.name, "POSTGRES_DB"),
           ],
           ports: [{ containerPort: 5432, name: "tunnel" }],
-          volumeMounts: [{ name: "pgdata", mountPath: "/postgres" }],
+          volumeMounts: [
+            { name: "pgdata", mountPath: "/var/lib/postgresql/data" },
+          ],
         },
         {
           name: "pgadmin",
@@ -64,8 +69,8 @@ export class PostgresChart extends Chart {
         },
       ],
       volumes: [
-        volumePVC("pgdata", nfs.createPVC(this, "pgdata", "1Gi").name),
-        volumePVC("pgadmin", nfs.createPVC(this, "pgadmin", "1Gi").name),
+        volumePVC("pgdata", pgdataPVC.name),
+        volumePVC("pgadmin", pgadminPVC.name),
       ],
     });
 

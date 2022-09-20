@@ -4,15 +4,15 @@ import {
   RunnerDeployment,
 } from "@/actions.summerwind.dev";
 import { config } from "~/config";
-import { ArgoCDApp, Chart, ChartProps, Ingress, volumePVC } from "~/constructs";
+import { Chart, ChartProps, Ingress, volumePVC } from "~/constructs";
 import { NFSProvisionerChart } from "./nfs-provisioner";
+import { ArgoCDChart } from "./argocd";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
   webhookUrl: string;
   targetRevision: string;
   clusterIssuerName?: string;
-  nfs: NFSProvisionerChart;
 }
 
 export class ActionsRunnerControllerChart extends Chart {
@@ -20,7 +20,6 @@ export class ActionsRunnerControllerChart extends Chart {
     scope: Construct,
     id: string,
     {
-      nfs,
       targets,
       webhookUrl,
       targetRevision,
@@ -30,26 +29,24 @@ export class ActionsRunnerControllerChart extends Chart {
   ) {
     super(scope, id, props);
 
-    new ArgoCDApp(this, "actions-runner-controller", {
-      spec: {
-        project: "default",
-        source: {
-          targetRevision,
-          repoUrl:
-            "https://actions-runner-controller.github.io/actions-runner-controller",
-          chart: "actions-runner-controller",
-          helm: {
-            values: {
-              authSecret: { create: true, github_token: config.arc.githubPAT },
-              githubWebhookServer: {
-                enabled: true,
-                ports: [{ nodePort: 33080 }],
-              },
-            },
-          },
-        },
+    const nfs = NFSProvisionerChart.of(this);
+
+    ArgoCDChart.of(this).helmApp(
+      this,
+      {
+        repoUrl:
+          "https://actions-runner-controller.github.io/actions-runner-controller",
+        chart: "actions-runner-controller",
+        targetRevision,
       },
-    });
+      {
+        authSecret: { create: true, github_token: config.arc.githubPAT },
+        githubWebhookServer: {
+          enabled: true,
+          ports: [{ nodePort: 33080 }],
+        },
+      }
+    );
 
     new HorizontalRunnerAutoscaler(this, "horizontalrunnerautoscaler", {
       spec: {
@@ -87,8 +84,8 @@ export class ActionsRunnerControllerChart extends Chart {
               dockerMtu: 1400,
               dockerdWithinRunnerContainer: true,
               image: config.prefetch("public.ecr.aws/axatol/gha-runner:latest"),
-              ...(organization && { organization }),
-              ...(repository && { repository }),
+              organization,
+              repository,
               env: [
                 // go
                 {
@@ -106,8 +103,14 @@ export class ActionsRunnerControllerChart extends Chart {
                 },
               ],
               volumeMounts: [
-                { name: "go-cache", mountPath: "/home/runner/.cache/go" },
-                { name: "yarn-cache", mountPath: "/home/runner/.cache/yarn" },
+                {
+                  name: "go-cache",
+                  mountPath: "/home/runner/.cache/go",
+                },
+                {
+                  name: "yarn-cache",
+                  mountPath: "/home/runner/.cache/yarn",
+                },
               ],
               volumes: [
                 volumePVC("go-cache", goPVC.name),

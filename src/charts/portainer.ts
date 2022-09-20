@@ -5,8 +5,9 @@ import {
 } from "@/k8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
-import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
+import { Chart, ChartProps } from "~/constructs";
 import { slug } from "~/utils";
+import { ArgoCDChart } from "./argocd";
 
 interface PortainerChartProps extends ChartProps {
   url: string;
@@ -39,33 +40,29 @@ export class PortainerChart extends Chart {
       },
     });
 
-    new ArgoCDApp(this, "portainer", {
-      spec: {
-        project: "default",
-        source: {
-          targetRevision,
-          repoUrl: "https://portainer.github.io/k8s/",
-          chart: "portainer",
-          helm: {
-            values: {
-              service: { type: "ClusterIP" },
-              ingress: {
-                enabled: true,
-                annotations: {
-                  "kubernetes.io/ingress.class": "traefik",
-                  ...(clusterIssuerName && {
-                    "cert-manager.io/cluster-issuer": clusterIssuerName,
-                  }),
-                },
-                hosts: [{ host: url, paths: [{ path: "/" }] }],
-                tls: [{ secretName: `${slug(url)}-tls`, hosts: [url] }],
-              },
-              persistence: { enabled: true, existingClaim: pvc.name },
-              tls: { existingSecret: `${slug(url)}-tls` },
-            },
-          },
-        },
+    ArgoCDChart.of(this).helmApp(
+      this,
+      {
+        targetRevision,
+        repoUrl: "https://portainer.github.io/k8s/",
+        chart: "portainer",
       },
-    });
+      {
+        service: { type: "ClusterIP" },
+        ingress: {
+          enabled: true,
+          annotations: {
+            "kubernetes.io/ingress.class": "traefik",
+            ...(clusterIssuerName && {
+              "cert-manager.io/cluster-issuer": clusterIssuerName,
+            }),
+          },
+          hosts: [{ host: url, paths: [{ path: "/" }] }],
+          tls: [{ secretName: `${slug(url)}-tls`, hosts: [url] }],
+        },
+        persistence: { enabled: true, existingClaim: pvc.name },
+        tls: { existingSecret: `${slug(url)}-tls` },
+      }
+    );
   }
 }

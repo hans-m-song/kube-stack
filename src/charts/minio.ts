@@ -13,22 +13,30 @@ import {
 } from "~/constructs";
 import { NFSProvisionerChart } from "./nfs-provisioner";
 
+const MINIO_CHART_SYMBOL = Symbol.for("@kube-stack/charts.minio");
+
 interface MinioChartProps extends ChartProps {
-  nfs: NFSProvisionerChart;
   apiUrl: string;
   url: string;
   clusterIssuerName?: string;
 }
 
 export class MinioChart extends Chart {
+  static of(construct: Construct): MinioChart {
+    return Chart.search(construct, MINIO_CHART_SYMBOL) as MinioChart;
+  }
+
   svc: KubeService;
 
   constructor(
     scope: Construct,
     id: string,
-    { nfs, apiUrl, url, clusterIssuerName, ...props }: MinioChartProps
+    { apiUrl, url, clusterIssuerName, ...props }: MinioChartProps
   ) {
     super(scope, id, props);
+    Object.defineProperty(this, MINIO_CHART_SYMBOL, { value: true });
+
+    const nfs = NFSProvisionerChart.of(this);
     const selector = { app: "minio" };
 
     const credentials = new Secret(this, "credentials", {

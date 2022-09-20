@@ -11,17 +11,27 @@ import { config, prefetchImages, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
 import { HomeAssistantChart } from "./charts/home-assistant";
-// import { PortainerChart } from "./charts/portainer";
 import { PrometheusChart } from "./charts/prometheus";
 import { MqttChart } from "./charts/mqtt";
 import { RegistryChart } from "./charts/registry";
 import { ArgoCDChart } from "./charts/argocd";
-import { NFSProvisionerChart } from "./charts/nfs-provisioner";
 import { PostgresChart } from "./charts/postgres";
+import { NFSProvisionerChart } from "./charts/nfs-provisioner";
 
 const app = new App({ outdir: "manifests" });
 
-const nfs = new NFSProvisionerChart(app, "nfs-provisioner", {
+new ArgoCDChart(app, "argocd", {
+  url: config.url("argocd.k8s", true),
+  namespace: "argocd",
+  targetRevision: "4.10.5",
+});
+
+const certManagers = new CertManagerChart(app, "cert-manager", {
+  namespace: "cert-manager",
+  targetRevision: "v1.9.1",
+});
+
+new NFSProvisionerChart(app, "nfs-provisioner", {
   namespace: "kube-system",
   targetRevision: "4.0.17",
   nfsServer: config.nfs.serverIP,
@@ -30,20 +40,7 @@ const nfs = new NFSProvisionerChart(app, "nfs-provisioner", {
 
 new PostgresChart(app, "postgres", {
   namespace: "postgres",
-  nfs,
   url: config.url("psql.k8s"),
-});
-
-const certManagers = new CertManagerChart(app, "cert-manager", {
-  namespace: "cert-manager",
-  targetRevision: "v1.9.1",
-});
-
-new ArgoCDChart(app, "argocd", {
-  url: config.url("argocd.k8s", true),
-  namespace: "argocd",
-  targetRevision: "4.10.5",
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 new PrometheusChart(app, "prometheus", {
@@ -51,13 +48,6 @@ new PrometheusChart(app, "prometheus", {
   grafanaUrl: config.url("grafana.k8s", true),
   targetRevision: "39.4.0",
 });
-
-// new PortainerChart(app, "portainer", {
-//   namespace: "portainer",
-//   url: config.url("portainer.k8s", true),
-//   targetRevision: "1.0.33",
-//   clusterIssuerName: certManagers.clusterIssuerPrd.name,
-// });
 
 new HelloWorldChart(app, "hello-world", {
   namespace: "hello",
@@ -67,18 +57,18 @@ new HelloWorldChart(app, "hello-world", {
 
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
-  nfs,
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
   webhookUrl: config.url("arc.k8s", true),
   targetRevision: "0.20.2",
   targets: [
     // repos
-    { repository: "hans-m-song/docker" },
+    // { repository: "hans-m-song/docker" },
     { repository: "hans-m-song/kube-stack" },
     { repository: "hans-m-song/home-assistant-integrations" },
     { repository: "hans-m-song/huisheng" },
     // organisations
-    { organization: "zidle-studio" },
+    // { organization: "zidle-studio" },
+    { organization: "tunes-anywhere" },
   ],
 });
 
@@ -87,7 +77,6 @@ const minio = new MinioChart(app, "minio", {
   apiUrl: config.url("api.minio.k8s", true),
   url: config.url("minio.k8s", true),
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
-  nfs,
 });
 
 new MongoChart(app, "mongo", {
@@ -122,12 +111,10 @@ new HuiShengChart(app, "huisheng", {
 
 // these should go last to pick up all the registered domains
 
+config.prefetch("public.ecr.aws/axatol/home-assistant-integrations:latest");
 new PrefetchChart(app, "prefetch", {
   namespace: "prefetch",
-  images: [
-    ...prefetchImages,
-    "public.ecr.aws/axatol/home-assistant-integrations:latest",
-  ],
+  images: prefetchImages,
 });
 
 new DynamicDNSChart(app, "ddns", {

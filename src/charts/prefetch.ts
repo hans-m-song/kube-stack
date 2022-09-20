@@ -19,7 +19,7 @@ export class PrefetchChart extends Chart {
 
     this.cronJob = new KubeCronJob(this, "cronjob", {
       spec: {
-        schedule: "*/5 * * * *",
+        schedule: "0 0 * * MON",
         successfulJobsHistoryLimit: 1,
         failedJobsHistoryLimit: 1,
         jobTemplate: {

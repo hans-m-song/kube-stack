@@ -1,6 +1,7 @@
 import { Construct } from "constructs";
-import { ArgoCDApp, Chart, ChartProps } from "~/constructs";
+import { Chart, ChartProps } from "~/constructs";
 import { slug } from "~/utils";
+import { ArgoCDChart } from "./argocd";
 
 interface PrometheusChartProps extends ChartProps {
   grafanaUrl: string;
@@ -21,38 +22,34 @@ export class PrometheusChart extends Chart {
   ) {
     super(scope, id, props);
 
-    new ArgoCDApp(this, "prometheus", {
-      spec: {
-        project: "default",
-        source: {
-          targetRevision,
-          repoUrl: "https://prometheus-community.github.io/helm-charts",
-          chart: "kube-prometheus-stack",
-          helm: {
-            values: {
-              grafana: {
-                ingress: {
-                  enabled: true,
-                  annotations: {
-                    "kubernetes.io/ingress.class": "traefik",
-                    ...(clusterIssuerName && {
-                      "cert-manager.io/cluster-issuer": clusterIssuerName,
-                    }),
-                  },
-                  hosts: [grafanaUrl],
-                  paths: ["/"],
-                  tls: [
-                    {
-                      secretName: `${slug(grafanaUrl)}-tls`,
-                      hosts: [grafanaUrl],
-                    },
-                  ],
-                },
-              },
+    ArgoCDChart.of(this).helmApp(
+      this,
+      {
+        targetRevision,
+        repoUrl: "https://prometheus-community.github.io/helm-charts",
+        chart: "kube-prometheus-stack",
+      },
+      {
+        grafana: {
+          ingress: {
+            enabled: true,
+            annotations: {
+              "kubernetes.io/ingress.class": "traefik",
+              ...(clusterIssuerName && {
+                "cert-manager.io/cluster-issuer": clusterIssuerName,
+              }),
             },
+            hosts: [grafanaUrl],
+            paths: ["/"],
+            tls: [
+              {
+                secretName: `${slug(grafanaUrl)}-tls`,
+                hosts: [grafanaUrl],
+              },
+            ],
           },
         },
-      },
-    });
+      }
+    );
   }
 }
