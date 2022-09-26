@@ -17,6 +17,7 @@ import { RegistryChart } from "./charts/registry";
 import { ArgoCDChart } from "./charts/argocd";
 import { PostgresChart } from "./charts/postgres";
 import { NFSProvisionerChart } from "./charts/nfs-provisioner";
+import { MediaChart } from "./charts/media";
 
 const app = new App({ outdir: "manifests" });
 
@@ -69,6 +70,7 @@ new ActionsRunnerControllerChart(app, "arc", {
     // organisations
     // { organization: "zidle-studio" },
     { organization: "tunes-anywhere" },
+    { organization: "axatol" },
   ],
 });
 
@@ -109,7 +111,12 @@ new HuiShengChart(app, "huisheng", {
   minioServiceName: `${minio.svc.name}.${minio.namespace}`,
 });
 
-// these should go last to pick up all the registered domains
+new MediaChart(app, "media", {
+  namespace: "media",
+  url: config.url("media.k8s"),
+});
+
+// these should go last to pick up all the registered values
 
 config.prefetch("public.ecr.aws/axatol/home-assistant-integrations:latest");
 new PrefetchChart(app, "prefetch", {

@@ -25,6 +25,7 @@ export const config = {
   prefetch,
   hostname,
   cacheDir,
+  tz: process.env.TZ ?? "Australia/Brisbane",
 
   arc: {
     githubPAT: assertEnv("ARC_GITHUB_PAT"),

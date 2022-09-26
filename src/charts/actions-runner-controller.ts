@@ -66,8 +66,13 @@ export class ActionsRunnerControllerChart extends Chart {
       port: "http",
     });
 
-    const goPVC = nfs.createPVC(this, "go-cache", "5Gi");
-    const yarnPVC = nfs.createPVC(this, "yarn-cache", "5Gi");
+    const goPVC = nfs.createPVC(this, "go-cache", "5Gi", "persistent", {
+      accessModes: ["ReadWriteMany"],
+    });
+
+    const yarnPVC = nfs.createPVC(this, "yarn-cache", "5Gi", "persistent", {
+      accessModes: ["ReadWriteMany"],
+    });
 
     targets.map(({ organization, repository }) => {
       if ((!organization && !repository) || (organization && repository)) {

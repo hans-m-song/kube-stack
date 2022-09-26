@@ -30,7 +30,7 @@ export class DynamicDNSChart extends Chart {
 
     this.config = new KubeConfigMap(this, "config", {
       data: {
-        TZ: "Australia/Brisbane",
+        TZ: config.tz,
         LOG_LEVEL: "info",
         LOG_JSON: "false",
       },

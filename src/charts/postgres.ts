@@ -37,8 +37,8 @@ export class PostgresChart extends Chart {
       },
     });
 
-    const pgdataPVC = nfs.createPVC(this, "pgdata", "1Gi");
-    const pgadminPVC = nfs.createPVC(this, "pgadmin", "1Gi");
+    const pgdataPVC = nfs.createPVC(this, "pgdata", "1Gi", "persistent");
+    const pgadminPVC = nfs.createPVC(this, "pgadmin", "1Gi", "persistent");
 
     const deployment = new Deployment(this, "postgres", {
       selector: { app: "postgres" },
@@ -47,24 +47,22 @@ export class PostgresChart extends Chart {
           name: "postgres",
           image: "postgres:14",
           env: [
-            { name: "PGDATA", value: "/var/lib/postgresql/data/pgdata" },
+            { name: "PGDATA", value: "/postgres/data/pgdata" },
             envVarSecretRef(credentials.name, "POSTGRES_USER"),
             envVarSecretRef(credentials.name, "POSTGRES_PASSWORD"),
             envVarSecretRef(credentials.name, "POSTGRES_DB"),
           ],
-          ports: [{ containerPort: 5432, name: "tunnel" }],
-          volumeMounts: [
-            { name: "pgdata", mountPath: "/var/lib/postgresql/data" },
-          ],
+          ports: [{ name: "tunnel", containerPort: 5432 }],
+          volumeMounts: [{ name: "pgdata", mountPath: "/postgres/data" }],
         },
         {
           name: "pgadmin",
-          image: "dpage/pgadmin4",
+          image: "dpage/pgadmin4:6.14",
           env: [
             envVarSecretRef(credentials.name, "PGADMIN_DEFAULT_EMAIL"),
             envVarSecretRef(credentials.name, "PGADMIN_DEFAULT_PASSWORD"),
           ],
-          ports: [{ containerPort: 80, name: "web" }],
+          ports: [{ name: "web", containerPort: 80 }],
           volumeMounts: [{ name: "pgadmin", mountPath: "/var/lib/pgadmin" }],
         },
       ],

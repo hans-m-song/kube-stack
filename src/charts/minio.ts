@@ -6,6 +6,7 @@ import {
   Chart,
   ChartProps,
   Deployment,
+  ExternalServiceName,
   Ingress,
   Secret,
   Service,
@@ -75,5 +76,9 @@ export class MinioChart extends Chart {
       hostName: apiUrl,
       clusterIssuerName,
     }).addPath({ path: "/", name: this.svc.name, port: "api" });
+  }
+
+  externalServiceName(scope: Chart, id: string) {
+    return ExternalServiceName.fromService(scope, id, this.svc);
   }
 }

@@ -6,9 +6,26 @@ mkdir -p bin
 
 [ -f pre-up.sh ] && ./pre-up.sh
 
+# install and configure nfs
+# sudo apt-get update
+# sudo apt-get install -y nfs-kernel-server
+# sudo mkdir -p /mnt/data/nfs/k8s
+# sudo chown -R nobody:nogroup /mnt/data/nfs
+# cat <<EOF | sudo tee -a /etc/exports
+# /mnt/data/nfs/k8s "$(hostname -I | awk '{print $1}')"(rw,sync,no_subtree_check,no_root_squash,anonuid=2000,anongid=2000)
+# EOF
+# sudo systemctl restart nfs-server.service
+# sudo adduser nfs-client \
+#   --disabled-login \
+#   --shell /sbin/nologin \
+#   --gecos "" \
+#   --uid 2000 \
+#   --gid 2000 \
+#   --no-create-home
+
 # setup with vlan
 # ./init-vlan.sh
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.1.250 --flannel-iface=eno1.vlan" sh -
+# curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.1.250 --flannel-iface=eno1.vlan" sh -
 curl -sfL https://get.k3s.io | sh -
 sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 sudo chown -R $USER ~/.kube

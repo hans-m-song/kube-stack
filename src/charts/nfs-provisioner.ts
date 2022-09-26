@@ -79,6 +79,7 @@ export class NFSProvisionerChart extends Chart {
       allowVolumeExpansion: true,
       reclaimPolicy: "Delete",
       volumeBindingMode: "Immediate",
+      // mountOptions: ["nfsvers=3"],
       parameters: {
         archiveOnDelete: "false",
         onDelete: "retain",
@@ -86,6 +87,30 @@ export class NFSProvisionerChart extends Chart {
         ...parameters,
       },
     });
+  }
+
+  persistentPVC(
+    scope: Construct,
+    id: string,
+    capacity: string,
+    props: {
+      accessModes?: string[];
+      volumeMode?: string;
+    } = {}
+  ) {
+    return this.createPVC(scope, id, capacity, "persistent", props);
+  }
+
+  ephemeralPVC(
+    scope: Construct,
+    id: string,
+    capacity: string,
+    props: {
+      accessModes?: string[];
+      volumeMode?: string;
+    } = {}
+  ) {
+    return this.createPVC(scope, id, capacity, "ephemeral", props);
   }
 
   createPVC(

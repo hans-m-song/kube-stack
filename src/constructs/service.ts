@@ -61,16 +61,34 @@ export class Service extends KubeService {
   static fromDeployment(scope: Construct, deployment: Deployment, id?: string) {
     const spec: KubeDeploymentProps = deployment.toJson();
     const selector = spec.spec?.selector.matchLabels;
-    const ports =
-      spec.spec?.template.spec?.containers
-        .map((container) => container.ports)
-        .flat()
-        .filter((value): value is Exclude<typeof value, undefined> => !!value)
-        .map((spec) => ({
+    const seen = new Map<number, string>();
+    const ports = spec.spec?.template.spec?.containers
+      .flatMap((container) => container.ports)
+      .map((spec) => {
+        if (!spec) {
+          return undefined;
+        }
+
+        if (seen.has(spec.containerPort)) {
+          const existingName = seen.get(spec.containerPort);
+          const newName = spec.name ?? "";
+          if (existingName !== newName) {
+            throw new Error(
+              `conflicting specs on port ${spec.containerPort}: ${newName} and ${existingName}`
+            );
+          }
+
+          return undefined;
+        }
+
+        seen.set(spec.containerPort, spec.name ?? "");
+        return {
           name: spec.name,
           port: spec.containerPort,
           targetPort: IntOrString.fromNumber(spec.containerPort),
-        })) ?? [];
+        };
+      })
+      .filter((value): value is Exclude<typeof value, undefined> => !!value);
 
     return new Service(scope, id ?? `${deployment.node.id}-service`, {
       spec: { selector, ports },
