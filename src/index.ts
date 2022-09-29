@@ -88,7 +88,6 @@ new MongoChart(app, "mongo", {
 
 new RegistryChart(app, "registry", {
   namespace: "registry",
-  minioServiceName: `${minio.svc.name}.${minio.namespace}`,
   url: config.url("registry.k8s", true),
   // clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });

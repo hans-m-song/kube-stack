@@ -1,17 +1,10 @@
 import { Yaml } from "cdk8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
-import {
-  Chart,
-  ChartProps,
-  Deployment,
-  ExternalServiceName,
-  Ingress,
-  Secret,
-} from "~/constructs";
+import { Chart, ChartProps, Deployment, Ingress, Secret } from "~/constructs";
+import { MinioChart } from "./minio";
 
 interface RegistryChartProps extends ChartProps {
-  minioServiceName: string;
   url: string;
   clusterIssuerName?: string;
 }
@@ -20,14 +13,14 @@ export class RegistryChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { url, minioServiceName, clusterIssuerName, ...props }: RegistryChartProps
+    { url, clusterIssuerName, ...props }: RegistryChartProps
   ) {
     super(scope, id, props);
+    const minio = MinioChart.of(this);
 
-    const { name: minioEndpoint } = ExternalServiceName.fromServiceAttributes(
+    const { name: minioEndpoint } = minio.externalServiceName(
       this,
-      "minio-service",
-      minioServiceName
+      "minio-service"
     );
 
     const configuration = new Secret(this, "configuration", {
@@ -38,17 +31,17 @@ export class RegistryChart extends Chart {
           loglevel: "debug",
           storage: {
             s3: {
-              accesskey: config.registry.s3AccessKey,
-              secretkey: config.registry.s3SecretKey,
+              accesskey: config.registry.s3.accessKeyID,
+              secretkey: config.registry.s3.secretAccessKey,
               region: "us-east-1",
               regionendpoint: `http://${minioEndpoint}:9000`,
               bucket: "docker",
-              encrypt: false,
-              keyid: "keyid",
-              secure: true,
-              v4auth: true,
-              chunksize: 5242880,
-              rootdirectory: "/",
+              // encrypt: false,
+              // keyid: "",
+              // secure: true,
+              // v4auth: true,
+              // chunksize: 5242880,
+              // rootdirectory: "/",
             },
             delete: { enabled: true },
             maintenance: {
@@ -61,7 +54,7 @@ export class RegistryChart extends Chart {
               readonly: { enabled: false },
             },
           },
-          http: { addr: ":5000", secret: "Registry12345" },
+          http: { addr: ":5000" },
           proxy: { remoteurl: "https://registry-1.docker.io" },
         }),
       },

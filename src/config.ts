@@ -98,7 +98,9 @@ export const config = {
   },
 
   registry: {
-    s3AccessKey: assertEnv("REGISTRY_S3_ACCESS_KEY_ID"),
-    s3SecretKey: assertEnv("REGISTRY_S3_SECRET_ACCESS_KEY"),
+    s3: {
+      accessKeyID: assertEnv("REGISTRY_S3_ACCESS_KEY_ID"),
+      secretAccessKey: assertEnv("REGISTRY_S3_SECRET_ACCESS_KEY"),
+    },
   },
 };
