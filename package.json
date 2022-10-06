@@ -22,7 +22,7 @@
     "cdk8s": "^2.3.17",
     "constructs": "^10.1.27",
     "dotenv": "^16.0.1",
-    "esbuild": "^0.14.46",
+    "esbuild": "^0.15.7",
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
