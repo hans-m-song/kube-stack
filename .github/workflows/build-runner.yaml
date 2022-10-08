@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: public.ecr.aws/axatol
-  REPOSITORY: axatol/gha-runner
+  REPOSITORY: gha-runner
 
 jobs:
   build:
