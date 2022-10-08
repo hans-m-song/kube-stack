@@ -89,6 +89,9 @@ export class NFSProvisionerChart extends Chart {
     });
   }
 
+  /**
+   * Creates a PVC that WILL NOT delete data when removed
+   */
   persistentPVC(
     scope: Construct,
     id: string,
@@ -101,6 +104,9 @@ export class NFSProvisionerChart extends Chart {
     return this.createPVC(scope, id, capacity, "persistent", props);
   }
 
+  /**
+   * Creates a PVC that WILL delete data when removed
+   */
   ephemeralPVC(
     scope: Construct,
     id: string,

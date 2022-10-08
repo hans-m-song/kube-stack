@@ -1,8 +1,12 @@
-import { Yaml } from "cdk8s";
 import { Construct } from "constructs";
-import { config } from "~/config";
-import { Chart, ChartProps, Deployment, Ingress, Secret } from "~/constructs";
-import { MinioChart } from "./minio";
+import {
+  Chart,
+  ChartProps,
+  Deployment,
+  Ingress,
+  volumePVC,
+} from "~/constructs";
+import { NFSProvisionerChart } from "./nfs-provisioner";
 
 interface RegistryChartProps extends ChartProps {
   url: string;
@@ -16,67 +20,19 @@ export class RegistryChart extends Chart {
     { url, clusterIssuerName, ...props }: RegistryChartProps
   ) {
     super(scope, id, props);
-    const minio = MinioChart.of(this);
+    const nfs = NFSProvisionerChart.of(this);
 
-    const { name: minioEndpoint } = minio.externalServiceName(
-      this,
-      "minio-service"
-    );
-
-    const configuration = new Secret(this, "configuration", {
-      data: {
-        "config.yml": Yaml.stringify({
-          version: 0.1,
-          log: { level: "debug", formatter: "text" },
-          loglevel: "debug",
-          storage: {
-            s3: {
-              accesskey: config.registry.s3.accessKeyID,
-              secretkey: config.registry.s3.secretAccessKey,
-              region: "us-east-1",
-              regionendpoint: `http://${minioEndpoint}:9000`,
-              bucket: "docker",
-              // encrypt: false,
-              // keyid: "",
-              // secure: true,
-              // v4auth: true,
-              // chunksize: 5242880,
-              // rootdirectory: "/",
-            },
-            delete: { enabled: true },
-            maintenance: {
-              uploadpurging: {
-                enabled: true,
-                age: "168h",
-                interval: "24h",
-                dryrun: false,
-              },
-              readonly: { enabled: false },
-            },
-          },
-          http: { addr: ":5000" },
-          proxy: { remoteurl: "https://registry-1.docker.io" },
-        }),
-      },
-    });
-
-    const deployment = new Deployment(this, "deployment", {
-      selector: { app: "registry" },
+    const deployment = new Deployment(this, "nexus", {
+      selector: { app: "nexus" },
       containers: [
         {
-          name: "registry",
-          image: "registry:2",
-          ports: [{ name: "http", containerPort: 5000 }],
-          volumeMounts: [
-            {
-              name: "config",
-              mountPath: "/etc/docker/registry/config.yml",
-              subPath: "config.yml",
-            },
-          ],
+          name: "nexus",
+          image: "sonatype/nexus3:3.42.0",
+          ports: [{ name: "http", containerPort: 8081 }],
+          volumeMounts: [{ name: "data", mountPath: "/nexus-data" }],
         },
       ],
-      volumes: [{ name: "config", secret: { secretName: configuration.name } }],
+      volumes: [volumePVC("data", nfs.persistentPVC(this, "data", "5Gi").name)],
     });
 
     const service = deployment.getService(this);
