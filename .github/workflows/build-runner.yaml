@@ -44,7 +44,7 @@ jobs:
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
-          docker build --tag $IMAGE:latest --cache-from $IMAGE:previous .
+          docker build --tag $IMAGE:latest --cache-from $IMAGE:previous ./runner
           docker push $IMAGE:latest
 
       - uses: hans-m-song/actions/prune-ecr-repository@master
