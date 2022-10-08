@@ -10,38 +10,45 @@ on:
       - 'runner/**'
       - .github/workflows/build-runner.yaml
 
+env:
+  REPOSITORY: gha-runner
+
 jobs:
   build:
     name: Build
     runs-on: self-hosted
 
     steps:
+      - uses: actions/checkout@v3
+
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
 
-      - uses: actions/checkout@v3
+      - uses: aws-actions/amazon-ecr-login@v1
+        id: ecr
+        with:
+          registry-type: public
 
-      - name: Build image
+      - name: Retrieve and tag last image
         env:
-          IMAGE: public.ecr.aws/axatol/gha-runner:latest
-          AWS_ACCESS_KEY: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.REPOSITORY }}
         run: |
-          docker run --rm \
-            -v $(pwd)/runner:/workspace \
-            -e AWS_ACCESS_KEY \
-            -e AWS_SECRET_ACCESS_KEY \
-            -e AWS_SDK_LOAD_CONFIG=true \
-            gcr.io/kaniko-project/executor:debug \
-              --cache \
-              --destination=${{ env.IMAGE }} \
-              --reproducible
+          docker pull $IMAGE:latest
+          docker tag $IMAGE:latest $IMAGE:previous
+          docker push $IMAGE:previous
+
+      - name: Build new image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.REPOSITORY }}
+        run: |
+          docker build --tag $IMAGE:latest --cache-from $IMAGE:previous .
+          docker push $IMAGE:latest
 
       - uses: hans-m-song/actions/prune-ecr-repository@master
         with:
           aws-access-key-id: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
-          repository-name: huisheng
+          repository-name: ${{ env.REPOSITORY }}
