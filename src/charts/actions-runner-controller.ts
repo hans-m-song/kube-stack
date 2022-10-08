@@ -92,6 +92,7 @@ export class ActionsRunnerControllerChart extends Chart {
               organization,
               repository,
               env: [
+                { name: "DISABLE_RUNNER_UPDATE", value: "true" },
                 // go
                 {
                   name: "GOPATH",

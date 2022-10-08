@@ -43,6 +43,8 @@ RUN sudo mkdir -p ${NVM_DIR} \
   ts-node \
   typescript \
   yarn \
+  && corepack enable \
+  && yarn set version stable \
   && export PATH=/usr/local/nvm/versions/node/$(nvm current)/bin:$PATH
 
 # persist path
