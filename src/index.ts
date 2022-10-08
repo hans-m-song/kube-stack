@@ -48,6 +48,7 @@ new PrometheusChart(app, "prometheus", {
   namespace: "monitoring",
   grafanaUrl: config.url("grafana.k8s", true),
   targetRevision: "39.4.0",
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
 new HelloWorldChart(app, "hello-world", {

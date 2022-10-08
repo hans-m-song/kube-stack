@@ -41,7 +41,7 @@ export class PrometheusChart extends Chart {
             },
             hosts: [grafanaUrl],
             paths: ["/"],
-            tls: [
+            tls: clusterIssuerName && [
               {
                 secretName: `${slug(grafanaUrl)}-tls`,
                 hosts: [grafanaUrl],
