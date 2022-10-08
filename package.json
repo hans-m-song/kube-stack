@@ -19,7 +19,7 @@
     "clean": "rm -rf manifests"
   },
   "dependencies": {
-    "cdk8s": "^2.3.17",
+    "cdk8s": "^2.4.30",
     "constructs": "^10.1.27",
     "dotenv": "^16.0.1",
     "esbuild": "^0.14.46",
