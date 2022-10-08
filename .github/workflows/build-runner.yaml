@@ -11,7 +11,8 @@ on:
       - .github/workflows/build-runner.yaml
 
 env:
-  REPOSITORY: gha-runner
+  REGISTRY: public.ecr.aws/axatol
+  REPOSITORY: axatol/gha-runner
 
 jobs:
   build:
@@ -28,13 +29,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
 
       - uses: aws-actions/amazon-ecr-login@v1
-        id: ecr
         with:
           registry-type: public
 
       - name: Retrieve and tag last image
         env:
-          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.REPOSITORY }}
+          IMAGE: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker pull $IMAGE:latest
           docker tag $IMAGE:latest $IMAGE:previous
@@ -42,7 +42,7 @@ jobs:
 
       - name: Build new image
         env:
-          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.REPOSITORY }}
+          IMAGE: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker build --tag $IMAGE:latest --cache-from $IMAGE:previous .
           docker push $IMAGE:latest
