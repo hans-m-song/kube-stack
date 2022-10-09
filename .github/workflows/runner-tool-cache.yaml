@@ -1,0 +1,33 @@
+name: Populate runner tool cache
+
+on:
+  workflow_call:
+
+jobs:
+  node:
+    runs-on:
+      - self-hosted
+
+    strategy:
+      matrix:
+        version:
+          - node: '14'
+          - node: '16'
+          - python: '3.10'
+          - go: '1.18'
+
+    steps:
+      - uses: actions/setup-node@v3
+        if: matrix.version.node
+        with:
+          node-version: ${{ matrix.version.node }}
+
+      - uses: actions/setup-python@v3
+        if: matrix.version.python
+        with:
+          python-version: ${{ matrix.version.python }}
+
+      - uses: actions/setup-go@v3
+        if: matrix.version.go
+        with:
+          go-version: ${{ matrix.version.go }}
