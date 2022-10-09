@@ -22,6 +22,17 @@ jobs:
         with:
           node-version: ${{ matrix.target.version }}
 
+      - name: Node tooling
+        if: matrix.target.tool == 'node'
+        run: |
+          npm install -g \
+            ts-node \
+            tsx \
+            typescript \
+            yarn
+          corepack enable
+          yarn set version stable
+
       - uses: actions/setup-python@v3
         if: matrix.target.tool == 'python'
         with:
