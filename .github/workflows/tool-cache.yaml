@@ -1,0 +1,55 @@
+name: Generate tool cache artifact
+
+# https://docs.github.com/en/enterprise-server@3.2/admin/github-actions/managing-access-to-actions-from-githubcom/setting-up-the-tool-cache-on-self-hosted-runners-without-internet-access#populating-the-tool-cache-for-a-self-hosted-runner
+
+on:
+  workflow_call:
+  push:
+    branches:
+      - tool-cache
+
+jobs:
+  tools:
+    runs-on: self-hosted
+    # runs-on: ubuntu-20.04
+
+    steps:
+      # - name: Clear existing tool cache
+      #   run: |
+      #     mv "${{ runner.tool_cache }}" "${{ runner.tool_cache }}.old"
+      #     mkdir -p "${{ runner.tool_cache }}"
+
+      - name: Setup Node 14
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Debugging env
+        run: env
+
+      - name: Debugging tool cache
+        run: |
+          echo "runner tool cache: ${{ runner.tool_cache }}"
+          ls ${{ runner.tool_cache }}
+          mkdir -p ${{ runner.tool_cache }}/_work/_tool
+          ls ${{ runner.tool_cache }}/_work/_tool
+
+      # - name: Setup Node 16
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '16'
+
+      # - name: Setup Python 3.10
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     python-version: '3.10'
+
+      # - name: Archive tool cache
+      #   run: |
+      #     cd "${{ runner.tool_cache }}"
+      #     tar -czf tool_cache.tar.gz *
+
+      # - name: Upload tool cache artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     path: ${{ runner.tool_cache }}/tool_cache.tar.gz
