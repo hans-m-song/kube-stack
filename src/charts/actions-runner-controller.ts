@@ -70,6 +70,10 @@ export class ActionsRunnerControllerChart extends Chart {
       accessModes: ["ReadWriteMany"],
     });
 
+    const npmPVC = nfs.createPVC(this, "npm-cache", "5Gi", "persistent", {
+      accessModes: ["ReadWriteMany"],
+    });
+
     const yarnPVC = nfs.createPVC(this, "yarn-cache", "5Gi", "persistent", {
       accessModes: ["ReadWriteMany"],
     });
@@ -104,6 +108,10 @@ export class ActionsRunnerControllerChart extends Chart {
                 },
                 // node
                 {
+                  name: "npm_config_cache",
+                  value: "/home/runner/.cache/npm",
+                },
+                {
                   name: "YARN_CACHE_FOLDER",
                   value: "/home/runner/.cache/yarn",
                 },
@@ -114,12 +122,17 @@ export class ActionsRunnerControllerChart extends Chart {
                   mountPath: "/home/runner/.cache/go",
                 },
                 {
+                  name: "npm-cache",
+                  mountPath: "/home/runner/.cache/npm",
+                },
+                {
                   name: "yarn-cache",
                   mountPath: "/home/runner/.cache/yarn",
                 },
               ],
               volumes: [
                 volumePVC("go-cache", goPVC.name),
+                volumePVC("npm-cache", npmPVC.name),
                 volumePVC("yarn-cache", yarnPVC.name),
               ],
             },

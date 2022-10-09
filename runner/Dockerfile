@@ -17,8 +17,7 @@ RUN sudo apt-get update \
 ENV GO_VERSION 1.18.3
 RUN curl -Lf "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o "go.tar.gz" \
   && sudo tar -C /usr/local -xzf go.tar.gz \
-  && rm -f go.tar.gz \
-  && export PATH=/usr/local/go/bin:$PATH
+  && rm -f go.tar.gz
 
 # aws cli
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscli.zip" \
@@ -44,8 +43,7 @@ RUN sudo mkdir -p ${NVM_DIR} \
   typescript \
   yarn \
   && corepack enable \
-  && yarn set version stable \
-  && export PATH=/usr/local/nvm/versions/node/$(nvm current)/bin:$PATH
+  && yarn set version stable
 
 # persist path
-RUN echo PATH=$PATH | sudo tee --append /etc/environment
+RUN echo PATH=/usr/local/nvm/versions/node/$(nvm current)/bin:/usr/local/go/bin:$PATH | sudo tee --append /etc/environment
