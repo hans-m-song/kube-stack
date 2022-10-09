@@ -41,18 +41,21 @@ export class ActionsRunnerControllerChart extends Chart {
       },
       {
         authSecret: { create: true, github_token: config.arc.githubPAT },
-        githubWebhookServer: {
-          enabled: true,
-          ports: [{ nodePort: 33080 }],
-        },
+        githubWebhookServer: { enabled: true },
       }
     );
 
     new HorizontalRunnerAutoscaler(this, "horizontalrunnerautoscaler", {
       spec: {
-        scaleUpTriggers: [{ amount: 1, duration: "5m" }],
         minReplicas: 0,
         maxReplicas: targets.length * 2,
+        scaleUpTriggers: [
+          {
+            githubEvent: { workflowJob: {} },
+            amount: 1,
+            duration: "5m",
+          },
+        ],
       },
     });
 
@@ -66,15 +69,11 @@ export class ActionsRunnerControllerChart extends Chart {
       port: "http",
     });
 
-    const goPVC = nfs.createPVC(this, "go-cache", "5Gi", "persistent", {
+    const toolPVC = nfs.createPVC(this, "tool-cache", "5Gi", "persistent", {
       accessModes: ["ReadWriteMany"],
     });
 
-    const npmPVC = nfs.createPVC(this, "npm-cache", "5Gi", "persistent", {
-      accessModes: ["ReadWriteMany"],
-    });
-
-    const yarnPVC = nfs.createPVC(this, "yarn-cache", "5Gi", "persistent", {
+    const modulePVC = nfs.createPVC(this, "module-cache", "5Gi", "persistent", {
       accessModes: ["ReadWriteMany"],
     });
 
@@ -96,7 +95,10 @@ export class ActionsRunnerControllerChart extends Chart {
               organization,
               repository,
               env: [
-                { name: "DISABLE_RUNNER_UPDATE", value: "true" },
+                {
+                  name: "DISABLE_RUNNER_UPDATE",
+                  value: "true",
+                },
                 // go
                 {
                   name: "GOPATH",
@@ -117,23 +119,15 @@ export class ActionsRunnerControllerChart extends Chart {
                 },
               ],
               volumeMounts: [
+                { name: "tool-cache", mountPath: "/opt/hostedtoolcache" },
                 {
-                  name: "go-cache",
-                  mountPath: "/home/runner/.cache/go",
-                },
-                {
-                  name: "npm-cache",
-                  mountPath: "/home/runner/.cache/npm",
-                },
-                {
-                  name: "yarn-cache",
-                  mountPath: "/home/runner/.cache/yarn",
+                  name: "cache",
+                  mountPath: "/home/runner/.cache",
                 },
               ],
               volumes: [
-                volumePVC("go-cache", goPVC.name),
-                volumePVC("npm-cache", npmPVC.name),
-                volumePVC("yarn-cache", yarnPVC.name),
+                volumePVC("tool-cache", toolPVC.name),
+                volumePVC("module-cache", modulePVC.name),
               ],
             },
           },
