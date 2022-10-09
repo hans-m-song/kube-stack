@@ -4,30 +4,30 @@ on:
   workflow_call:
 
 jobs:
-  node:
+  cache:
     runs-on:
       - self-hosted
 
     strategy:
       matrix:
-        version:
-          - node: '14'
-          - node: '16'
-          - python: '3.10'
-          - go: '1.18'
+        target:
+          - { tool: node, version: '14' }
+          - { tool: node, version: '16' }
+          - { tool: python, version: '3.10' }
+          - { tool: go, version: '1.18' }
 
     steps:
       - uses: actions/setup-node@v3
-        if: matrix.version.node
+        if: matrix.target.tool == 'node'
         with:
-          node-version: ${{ matrix.version.node }}
+          node-version: ${{ matrix.target.version }}
 
       - uses: actions/setup-python@v3
-        if: matrix.version.python
+        if: matrix.target.tool == 'python'
         with:
-          python-version: ${{ matrix.version.python }}
+          python-version: ${{ matrix.target.version }}
 
       - uses: actions/setup-go@v3
-        if: matrix.version.go
+        if: matrix.target.tool == 'go'
         with:
-          go-version: ${{ matrix.version.go }}
+          go-version: ${{ matrix.target.version }}

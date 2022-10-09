@@ -9,6 +9,7 @@ on:
     paths:
       - 'runner/**'
       - .github/workflows/build-runner.yaml
+      - .github/workflows/runner-tool-cache.yaml
 
 env:
   REGISTRY: public.ecr.aws/axatol
