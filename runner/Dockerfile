@@ -46,4 +46,4 @@ RUN sudo mkdir -p ${NVM_DIR} \
   && yarn set version stable
 
 # persist path
-RUN echo PATH=/usr/local/nvm/versions/node/$(nvm current)/bin:/usr/local/go/bin:$PATH | sudo tee --append /etc/environment
+RUN echo "PATH=$PATH" | sudo tee --append /etc/environment
