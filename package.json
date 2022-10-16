@@ -16,7 +16,8 @@
     "lint": "eslint \"src/**/*.ts\"",
     "diff": "kubectl diff -f manifests || true > pending.diff",
     "diff:ss": "kubectl diff -f manifests --server-side || true > pending.diff",
-    "clean": "rm -rf manifests"
+    "clean": "rm -rf manifests",
+    "prepare": "husky install"
   },
   "dependencies": {
     "cdk8s": "^2.3.17",
@@ -37,6 +38,7 @@
     "ts-jest": "^26.5.6",
     "ts-node": "^10.8.1",
     "tsx": "^3.9.0",
-    "typescript": "^4.7.3"
+    "typescript": "^4.7.3",
+    "husky": "^8.0.0"
   }
 }

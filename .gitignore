@@ -1,12 +1,20 @@
+# typescript
 *.d.ts
 *.js
-!jest.config.js
-node_modules
 dist/
-*.env
-env.*
-*.properties
+
+# node
+node_modules
+
+# cdk8s
 manifests
+
+# git secrets
+.gitsecret/keys/random_seed
+*.env*
+!*.secret
+
+# misc
 create-secrets.sh
 *.iam.json
 bin
