@@ -1441,10 +1441,10 @@ concurrently@^7.2.2:
     tree-kill "^1.2.2"
     yargs "^17.3.1"
 
-constructs@^10.1.27:
-  version "10.1.28"
-  resolved "https://registry.yarnpkg.com/constructs/-/constructs-10.1.28.tgz#5eac0669c04cc25f28d8d28fe2cac47ae86157ae"
-  integrity sha512-wuIrNAwNnWUHBoErdKtJOpVdMdqQXJJmUHJiMbBggSWS/Qc6twA/jBOkyfppb5p0gHbLUWRQjy+wN8AMMr+bvA==
+constructs@^10.1.103:
+  version "10.1.123"
+  resolved "https://registry.yarnpkg.com/constructs/-/constructs-10.1.123.tgz#115464706464a91afb04baadd61cf81a237dfef0"
+  integrity sha512-uQtS81HjFznStVKXD8SmUUyT18drc4UWft3hBVqaFSX350auilXJ7IdVeZ7e2mFF7bGwr/60EmuY8o86l7y+rg==
 
 constructs@^10.1.33:
   version "10.1.33"
