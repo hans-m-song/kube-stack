@@ -10,21 +10,34 @@ import {
   Ingress,
   Secret,
   volumeHostPath,
+  volumePVC,
 } from "~/constructs";
+import { NFSChart } from "./nfs";
 
 interface HomeAssistantChartProps extends ChartProps {
   url: string;
   mqttUrl: string;
   clusterIssuerName?: string;
+  zigbeeHWBridgeId: string;
+  zigbeeUrl?: string;
 }
 
 export class HomeAssistantChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { url, mqttUrl, clusterIssuerName, ...props }: HomeAssistantChartProps
+    {
+      url,
+      mqttUrl,
+      clusterIssuerName,
+      zigbeeHWBridgeId,
+      zigbeeUrl,
+      ...props
+    }: HomeAssistantChartProps
   ) {
     super(scope, id, props);
+
+    const nfs = NFSChart.of(this);
 
     const credentials = new Secret(this, "credentials", {
       data: {
@@ -55,6 +68,58 @@ export class HomeAssistantChart extends Chart {
 
     eufy.getService(this);
 
+    const zigbee = new Deployment(this, "zigbee2mqtt", {
+      selector: { app: "zigbee2mqtt" },
+      containers: [
+        {
+          name: "zigbee2mqtt",
+          image: "koenkk/zigbee2mqtt:1.28.0",
+          securityContext: {
+            privileged: true,
+            // runAsUser: 20,
+            // runAsGroup: 20, // dialout
+          },
+          env: [
+            { name: "TZ", value: config.tz },
+            { name: "ZIGBEE2MQTT_CONFIG_HOMEASSISTANT", value: "true" },
+            {
+              name: "ZIGBEE2MQTT_CONFIG_MQTT_SERVER",
+              value: "tcp://k8s.axatol.xyz:31883",
+            },
+            { name: "ZIGBEE2MQTT_CONFIG_FRONTEND", value: "true" },
+            { name: "ZIGBEE2MQTT_CONFIG_FRONTEND", value: "true" },
+            { name: "ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER", value: "ezsp" },
+            { name: "ZIGBEE2MQTT_CONFIG_SERIAL_PORT", value: "/dev/ttyACM0" },
+          ],
+          ports: [{ containerPort: 8080 }],
+          volumeMounts: [
+            { name: "data", mountPath: "/app/data" },
+            { name: "zbdongle-e", mountPath: "/dev/ttyACM0" },
+            // { name: "udev", mountPath: "udev" },
+          ],
+        },
+      ],
+      volumes: [
+        volumePVC(
+          "data",
+          nfs.persistentPVC(this, "zigbee2mqtt-data", "1Gi").name
+        ),
+        volumeHostPath(
+          "zbdongle-e",
+          `/dev/serial/by-id/${zigbeeHWBridgeId}`,
+          ""
+        ),
+        // volumeHostPath("udev", "/run/udev", ""),
+      ],
+    });
+
+    zigbeeUrl &&
+      new Ingress(this, "zigbee-ingress", { hostName: zigbeeUrl }).addPath({
+        path: "/",
+        name: zigbee.getService(this).name,
+        port: 8080,
+      });
+
     const deployment = new Deployment(this, "deployment", {
       selector: { app: `${this.node.id}` },
       containers: [
@@ -76,7 +141,13 @@ export class HomeAssistantChart extends Chart {
                 command: [
                   "/bin/bash",
                   "-c",
-                  "[ -f /config/custom_components/hacs ] && wget -O - https://get.hacs.xyz | bash - || true",
+                  [
+                    "[ -f /config/custom_components/hacs ]",
+                    "&&",
+                    "wget -O - https://get.hacs.xyz | bash -",
+                    "||",
+                    "true",
+                  ].join(" "),
                 ],
               },
             },

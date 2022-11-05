@@ -1,22 +1,22 @@
 import "dotenv/config";
 import "source-map-support/register";
 import { App } from "cdk8s";
-import { ActionsRunnerControllerChart } from "./charts/actions-runner-controller";
+import { ActionsRunnerControllerChart } from "./charts/arc";
 import { HuiShengChart } from "./charts/huisheng";
 import { DynamicDNSChart } from "./charts/dynamic-dns";
 import { PrefetchChart } from "./charts/prefetch";
-import { HelloWorldChart } from "./charts/hello-world";
+// import { HelloWorldChart } from "./charts/hello-world";
 import { CertManagerChart } from "./charts/cert-manager";
 import { config, prefetchImages, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
-import { HomeAssistantChart } from "./charts/home-assistant";
+import { HomeAssistantChart } from "./charts/hass";
 import { PrometheusChart } from "./charts/prometheus";
-import { MqttChart } from "./charts/mqtt";
+import { MQTTChart } from "./charts/mqtt";
 import { RegistryChart } from "./charts/registry";
 import { ArgoCDChart } from "./charts/argocd";
 import { PostgresChart } from "./charts/postgres";
-import { NFSProvisionerChart } from "./charts/nfs-provisioner";
+import { NFSChart } from "./charts/nfs";
 import { MediaChart } from "./charts/media";
 
 const app = new App({ outdir: "manifests" });
@@ -32,7 +32,7 @@ const certManagers = new CertManagerChart(app, "cert-manager", {
   targetRevision: "v1.9.1",
 });
 
-new NFSProvisionerChart(app, "nfs-provisioner", {
+new NFSChart(app, "nfs", {
   namespace: "kube-system",
   targetRevision: "4.0.17",
   nfsServer: config.nfs.serverIP,
@@ -51,22 +51,21 @@ new PrometheusChart(app, "prometheus", {
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
-new HelloWorldChart(app, "hello-world", {
-  namespace: "hello",
-  url: config.url("hello.k8s", true),
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
-});
+// new HelloWorldChart(app, "hello-world", {
+//   namespace: "hello",
+//   url: config.url("hello.k8s", true),
+//   clusterIssuerName: certManagers.clusterIssuerPrd.name,
+// });
 
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
   webhookUrl: config.url("arc.k8s", true),
-  targetRevision: "0.20.2",
+  targetRevision: "0.21.0",
   targets: [
     // repos
     // { repository: "hans-m-song/docker" },
     { repository: "hans-m-song/kube-stack" },
-    { repository: "hans-m-song/home-assistant-integrations" },
     { repository: "hans-m-song/huisheng" },
     // organisations
     // { organization: "zidle-studio" },
@@ -93,7 +92,7 @@ new RegistryChart(app, "registry", {
   // clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
-new MqttChart(app, "mqtt", {
+new MQTTChart(app, "mqtt", {
   namespace: "mqtt",
   nodePort: 31883,
 });
@@ -103,6 +102,9 @@ new HomeAssistantChart(app, "hass", {
   url: config.url("hass.k8s", true),
   mqttUrl: config.url("mqtt.k8s"),
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  zigbeeUrl: config.url("zigbee2mqtt.k8s"),
+  zigbeeHWBridgeId:
+    "usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20220818083418-if00",
 });
 
 new HuiShengChart(app, "huisheng", {
@@ -119,10 +121,10 @@ new MediaChart(app, "media", {
 // these should go last to pick up all the registered values
 
 config.prefetch("public.ecr.aws/axatol/home-assistant-integrations:latest");
-new PrefetchChart(app, "prefetch", {
-  namespace: "prefetch",
-  images: prefetchImages,
-});
+// new PrefetchChart(app, "prefetch", {
+//   namespace: "prefetch",
+//   images: prefetchImages,
+// });
 
 new DynamicDNSChart(app, "ddns", {
   namespace: "ddns",

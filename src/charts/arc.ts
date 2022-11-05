@@ -5,7 +5,7 @@ import {
 } from "@/actions.summerwind.dev";
 import { config } from "~/config";
 import { Chart, ChartProps, Ingress, volumePVC } from "~/constructs";
-import { NFSProvisionerChart } from "./nfs-provisioner";
+import { NFSChart } from "./nfs";
 import { ArgoCDChart } from "./argocd";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
@@ -29,7 +29,7 @@ export class ActionsRunnerControllerChart extends Chart {
   ) {
     super(scope, id, props);
 
-    const nfs = NFSProvisionerChart.of(this);
+    const nfs = NFSChart.of(this);
 
     ArgoCDChart.of(this).helmApp(
       this,
@@ -121,7 +121,7 @@ export class ActionsRunnerControllerChart extends Chart {
               volumeMounts: [
                 { name: "tool-cache", mountPath: "/opt/hostedtoolcache" },
                 {
-                  name: "cache",
+                  name: "module-cache",
                   mountPath: "/home/runner/.cache",
                 },
               ],

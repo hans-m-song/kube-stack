@@ -13,7 +13,7 @@ interface MqttChartProps extends ChartProps {
   nodePort: number;
 }
 
-export class MqttChart extends Chart {
+export class MQTTChart extends Chart {
   deployment = new Deployment(this, "deployment", {
     selector: { app: "mqtt" },
     containers: [

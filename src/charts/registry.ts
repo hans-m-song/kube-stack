@@ -6,7 +6,7 @@ import {
   Ingress,
   volumePVC,
 } from "~/constructs";
-import { NFSProvisionerChart } from "./nfs-provisioner";
+import { NFSChart } from "./nfs";
 
 interface RegistryChartProps extends ChartProps {
   url: string;
@@ -20,7 +20,7 @@ export class RegistryChart extends Chart {
     { url, clusterIssuerName, ...props }: RegistryChartProps
   ) {
     super(scope, id, props);
-    const nfs = NFSProvisionerChart.of(this);
+    const nfs = NFSChart.of(this);
 
     const deployment = new Deployment(this, "nexus", {
       selector: { app: "nexus" },

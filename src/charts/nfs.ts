@@ -13,12 +13,9 @@ export interface NFSProvisionerChartProps extends ChartProps {
   nfsPath: string;
 }
 
-export class NFSProvisionerChart extends Chart {
-  static of(construct: Construct): NFSProvisionerChart {
-    return Chart.search(
-      construct,
-      NFS_PROVISIONER_CHART_SYMBOL
-    ) as NFSProvisionerChart;
+export class NFSChart extends Chart {
+  static of(construct: Construct): NFSChart {
+    return Chart.search(construct, NFS_PROVISIONER_CHART_SYMBOL) as NFSChart;
   }
 
   ephemeralSC: KubeStorageClass;

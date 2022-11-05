@@ -10,7 +10,7 @@ import {
   Service,
   volumePVC,
 } from "~/constructs";
-import { NFSProvisionerChart } from "./nfs-provisioner";
+import { NFSChart } from "./nfs";
 
 export interface PostgresChartProps extends ChartProps {
   url: string;
@@ -25,7 +25,7 @@ export class PostgresChart extends Chart {
     { url, ...props }: PostgresChartProps
   ) {
     super(scope, id, props);
-    const nfs = NFSProvisionerChart.of(this);
+    const nfs = NFSChart.of(this);
 
     const credentials = new Secret(this, "credentials", {
       data: {

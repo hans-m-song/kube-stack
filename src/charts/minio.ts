@@ -12,7 +12,7 @@ import {
   Service,
   volumePVC,
 } from "~/constructs";
-import { NFSProvisionerChart } from "./nfs-provisioner";
+import { NFSChart } from "./nfs";
 
 const MINIO_CHART_SYMBOL = Symbol.for("@kube-stack/charts.minio");
 
@@ -37,7 +37,7 @@ export class MinioChart extends Chart {
     super(scope, id, props);
     Object.defineProperty(this, MINIO_CHART_SYMBOL, { value: true });
 
-    const nfs = NFSProvisionerChart.of(this);
+    const nfs = NFSChart.of(this);
     const selector = { app: "minio" };
 
     const credentials = new Secret(this, "credentials", {

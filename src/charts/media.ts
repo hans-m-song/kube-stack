@@ -8,7 +8,7 @@ import {
   Ingress,
   volumePVC,
 } from "~/constructs";
-import { NFSProvisionerChart } from "./nfs-provisioner";
+import { NFSChart } from "./nfs";
 
 export interface MediaChartProps extends ChartProps {
   url: string;
@@ -21,15 +21,12 @@ export class MediaChart extends Chart {
     { url, ...props }: MediaChartProps
   ) {
     super(scope, id, props);
-    const nfs = NFSProvisionerChart.of(this);
+    const nfs = NFSChart.of(this);
 
     const claims = {
-      "jackett-config": nfs.persistentPVC(this, "jackett-config", "1Gi"),
-      "qbt-config": nfs.persistentPVC(this, "qbt-config", "1Gi"),
-      "sonarr-config": nfs.persistentPVC(this, "sonarr-config", "1Gi"),
-      "radarr-config": nfs.persistentPVC(this, "radarr-config", "1Gi"),
-      "lidarr-config": nfs.persistentPVC(this, "lidarr-config", "1Gi"),
-      "jellyfin-config": nfs.persistentPVC(this, "jellyfin-config", "1Gi"),
+      config: nfs.persistentPVC(this, "config", "1Gi", {
+        accessModes: ["ReadWriteMany"],
+      }),
       data: nfs.persistentPVC(this, "data", "10Gi", {
         accessModes: ["ReadWriteMany"],
       }),
@@ -46,7 +43,9 @@ export class MediaChart extends Chart {
         name: "jackett",
         image: "lscr.io/linuxserver/jackett",
         env: [...commonEnv],
-        volumeMounts: [{ name: "jackett-config", mountPath: "/config" }],
+        volumeMounts: [
+          { name: "config", mountPath: "/config", subPath: "jackett" },
+        ],
         ports: [{ name: "jackettweb", containerPort: 9117 }],
       },
 
@@ -55,7 +54,7 @@ export class MediaChart extends Chart {
         image: "lscr.io/linuxserver/qbittorrent",
         env: [...commonEnv],
         volumeMounts: [
-          { name: "qbt-config", mountPath: "/config" },
+          { name: "config", mountPath: "/config", subPath: "qbt" },
           { name: "data", mountPath: "/data" },
         ],
         ports: [{ name: "qbtweb", containerPort: 8080 }],
@@ -66,7 +65,7 @@ export class MediaChart extends Chart {
         image: "lscr.io/linuxserver/sonarr",
         env: [...commonEnv],
         volumeMounts: [
-          { name: "sonarr-config", mountPath: "/config" },
+          { name: "config", mountPath: "/config", subPath: "sonarr" },
           { name: "data", mountPath: "/data" },
         ],
         ports: [{ name: "sonarrweb", containerPort: 8989 }],
@@ -77,7 +76,7 @@ export class MediaChart extends Chart {
         image: "lscr.io/linuxserver/radarr",
         env: [...commonEnv],
         volumeMounts: [
-          { name: "radarr-config", mountPath: "/config" },
+          { name: "config", mountPath: "/config", subPath: "radarr" },
           { name: "data", mountPath: "/data" },
         ],
         ports: [{ name: "radarrweb", containerPort: 7878 }],
@@ -88,7 +87,7 @@ export class MediaChart extends Chart {
         image: "lscr.io/linuxserver/lidarr",
         env: [...commonEnv],
         volumeMounts: [
-          { name: "lidarr-config", mountPath: "/config" },
+          { name: "config", mountPath: "/config", subPath: "lidarr" },
           { name: "data", mountPath: "/data" },
         ],
         ports: [{ name: "lidarrweb", containerPort: 8686 }],
@@ -99,7 +98,7 @@ export class MediaChart extends Chart {
         image: "lscr.io/linuxserver/jellyfin",
         env: [...commonEnv],
         volumeMounts: [
-          { name: "jellyfin-config", mountPath: "/config" },
+          { name: "config", mountPath: "/config", subPath: "jellyfin" },
           { name: "data", mountPath: "/data" },
         ],
         ports: [{ name: "jellyfinweb", containerPort: 8096 }],
