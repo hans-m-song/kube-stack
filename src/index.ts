@@ -5,7 +5,7 @@ import { ActionsRunnerControllerChart } from "./charts/arc";
 import { HuiShengChart } from "./charts/huisheng";
 import { DynamicDNSChart } from "./charts/dynamic-dns";
 import { PrefetchChart } from "./charts/prefetch";
-// import { HelloWorldChart } from "./charts/hello-world";
+import { HelloWorldChart } from "./charts/hello-world";
 import { CertManagerChart } from "./charts/cert-manager";
 import { config, prefetchImages, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
@@ -86,11 +86,11 @@ new MongoChart(app, "mongo", {
   url: config.url("mongo.k8s"),
 });
 
-new RegistryChart(app, "registry", {
-  namespace: "registry",
-  url: config.url("registry.k8s", true),
-  // clusterIssuerName: certManagers.clusterIssuerPrd.name,
-});
+// new RegistryChart(app, "registry", {
+//   namespace: "registry",
+//   url: config.url("registry.k8s", true),
+//   // clusterIssuerName: certManagers.clusterIssuerPrd.name,
+// });
 
 new MQTTChart(app, "mqtt", {
   namespace: "mqtt",

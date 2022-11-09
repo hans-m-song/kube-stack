@@ -8,6 +8,7 @@ node_modules
 
 # cdk8s
 manifests
+!k3s/**
 
 # git secrets
 .gitsecret/keys/random_seed

@@ -1,4 +1,4 @@
-import { KubeService } from "@/k8s";
+import { IntOrString, KubeService } from "@/k8s";
 import { Construct } from "constructs";
 import { config } from "~/config";
 import {
@@ -57,6 +57,20 @@ export class MongoChart extends Chart {
     });
 
     this.svc = Service.fromDeployment(this, deployment);
+
+    new Service(this, "port", {
+      spec: {
+        selector,
+        type: "NodePort",
+        ports: [
+          {
+            port: 27017,
+            targetPort: IntOrString.fromString("api"),
+            nodePort: 32717,
+          },
+        ],
+      },
+    });
 
     new Ingress(this, "ingress", { hostName: url, clusterIssuerName }).addPath({
       path: "/",

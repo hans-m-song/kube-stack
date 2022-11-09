@@ -72,6 +72,7 @@ curl -L $actions_runner_controller_crd_url | ./bin/kfilt -i kind=CustomResourceD
 yarn install
 yarn build
 
+sudo cp k3s/server/manifests/* /var/lib/rancher/k3s/server/manifests/
 kubectl apply -f manifests
 
 [ -f post-apply.sh ] && ./post-apply.sh
