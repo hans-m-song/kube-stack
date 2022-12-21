@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 summerwind/actions-runner-dind:latest 
+FROM --platform=linux/amd64 summerwind/actions-runner-dind:ubuntu-20.04 
 
 # SHELL ["/bin/bash", "--login", "-c"]
 WORKDIR $HOME
