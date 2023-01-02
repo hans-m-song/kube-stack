@@ -38,12 +38,12 @@ new PrometheusChart(app, "prometheus", {
   namespace: "monitoring",
   grafanaUrl: config.url("grafana.k8s", true),
   targetRevision: "39.4.0",
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  clusterIssuerName: certManagers.clusterIssuerPrd.node.id,
 });
 
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  clusterIssuerName: certManagers.clusterIssuerPrd.node.id,
   webhookUrl: config.url("arc.k8s", true),
   targetRevision: "0.21.0",
   targets: [
@@ -62,7 +62,7 @@ const minio = new MinioChart(app, "minio", {
   namespace: "minio",
   apiUrl: config.url("api.minio.k8s", true),
   url: config.url("minio.k8s", true),
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  clusterIssuerName: certManagers.clusterIssuerPrd.node.id,
 });
 
 new MongoChart(app, "mongo", {
@@ -79,7 +79,7 @@ new HomeAssistantChart(app, "hass", {
   namespace: "home-assistant",
   url: config.url("hass.k8s", true),
   mqttUrl: config.url("mqtt.k8s"),
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  clusterIssuerName: certManagers.clusterIssuerPrd.node.id,
   zigbeeUrl: config.url("zigbee2mqtt.k8s"),
   zigbeeHWBridgeId:
     "usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20220818083418-if00",
@@ -94,7 +94,7 @@ new HuiShengChart(app, "huisheng", {
 new MediaChart(app, "media", {
   namespace: "media",
   subdomain: "media.k8s",
-  clusterIssuerName: certManagers.clusterIssuerPrd.name,
+  clusterIssuerName: certManagers.clusterIssuerPrd.node.id,
 });
 
 // should go last to pick up all the registered values
