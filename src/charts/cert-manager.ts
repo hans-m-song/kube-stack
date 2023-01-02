@@ -3,7 +3,7 @@ import { ClusterIssuer } from "@/cert-manager.io";
 import { Chart, ChartProps, Secret } from "~/constructs";
 import { slug } from "~/utils";
 import { config } from "~/config";
-import { ArgoCDChart } from "./argocd";
+import { Helm } from "~/constructs/helm";
 
 const CERT_MANAGER_CHART_SYMBOL = Symbol.for("@kube-stack/charts.cert-manager");
 
@@ -30,20 +30,17 @@ export class CertManagerChart extends Chart {
     super(scope, id, props);
     Object.defineProperty(this, CERT_MANAGER_CHART_SYMBOL, { value: true });
 
+    new Helm(this, "cert-manager", {
+      namespace: props.namespace,
+      chart: "jetstack/cert-manager",
+      releaseName: "cert-manager",
+      values: { installCRDs: true },
+    });
+
     new Secret(this, "aws-credentials", {
       metadata: { name: "aws-credentials" },
       data: { aws_secret_access_key: config.certManager.awsSecretAccessKey },
     });
-
-    ArgoCDChart.of(this).helmApp(
-      this,
-      {
-        targetRevision,
-        repoUrl: "https://charts.jetstack.io",
-        chart: "cert-manager",
-      },
-      { installCRDs: true }
-    );
 
     this.clusterIssuerStg = this.createIssuer(
       "stg",

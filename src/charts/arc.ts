@@ -6,7 +6,7 @@ import {
 import { config } from "~/config";
 import { Chart, ChartProps, Ingress, volumePVC } from "~/constructs";
 import { NFSChart } from "./nfs";
-import { ArgoCDChart } from "./argocd";
+import { Helm } from "~/constructs/helm";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
   targets: { organization?: string; repository?: string }[];
@@ -31,19 +31,15 @@ export class ActionsRunnerControllerChart extends Chart {
 
     const nfs = NFSChart.of(this);
 
-    ArgoCDChart.of(this).helmApp(
-      this,
-      {
-        repoUrl:
-          "https://actions-runner-controller.github.io/actions-runner-controller",
-        chart: "actions-runner-controller",
-        targetRevision,
-      },
-      {
+    new Helm(this, "actions-runner-controller", {
+      namespace: props.namespace,
+      chart: "actions-runner-controller/actions-runner-controller",
+      releaseName: "actions-runner-controller",
+      values: {
         authSecret: { create: true, github_token: config.arc.githubPAT },
         githubWebhookServer: { enabled: true },
-      }
-    );
+      },
+    });
 
     new HorizontalRunnerAutoscaler(this, "horizontalrunnerautoscaler", {
       spec: {

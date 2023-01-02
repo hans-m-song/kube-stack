@@ -87,7 +87,6 @@ export class HomeAssistantChart extends Chart {
               value: "tcp://k8s.axatol.xyz:31883",
             },
             { name: "ZIGBEE2MQTT_CONFIG_FRONTEND", value: "true" },
-            { name: "ZIGBEE2MQTT_CONFIG_FRONTEND", value: "true" },
             { name: "ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER", value: "ezsp" },
             { name: "ZIGBEE2MQTT_CONFIG_SERIAL_PORT", value: "/dev/ttyACM0" },
           ],

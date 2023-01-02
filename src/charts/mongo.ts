@@ -8,8 +8,9 @@ import {
   Ingress,
   Secret,
   Service,
-  volumeHostPath,
+  volumePVC,
 } from "~/constructs";
+import { NFSChart } from "./nfs";
 
 interface MongoChartProps extends ChartProps {
   url: string;
@@ -26,6 +27,8 @@ export class MongoChart extends Chart {
   ) {
     super(scope, id, props);
     const selector = { app: "mongo" };
+
+    const pvc = NFSChart.of(this).persistentPVC(this, "data", "2Gi");
 
     const credentials = new Secret(this, "credentials", {
       data: {
@@ -53,7 +56,7 @@ export class MongoChart extends Chart {
           env: [{ name: "ME_CONFIG_MONGODB_SERVER", value: "localhost" }],
         },
       ],
-      volumes: [volumeHostPath("data", config.cache("mongo"))],
+      volumes: [volumePVC("data", pvc.name)],
     });
 
     this.svc = Service.fromDeployment(this, deployment);

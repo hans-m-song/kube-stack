@@ -11,14 +11,15 @@ import {
 import { NFSChart } from "./nfs";
 
 export interface MediaChartProps extends ChartProps {
-  url: string;
+  subdomain: string;
+  clusterIssuerName?: string;
 }
 
 export class MediaChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { url, ...props }: MediaChartProps
+    { subdomain, clusterIssuerName, ...props }: MediaChartProps
   ) {
     super(scope, id, props);
     const nfs = NFSChart.of(this);
@@ -130,7 +131,10 @@ export class MediaChart extends Chart {
         return null;
       }
 
-      return new Ingress(this, name, { hostName: `${name}.${url}` }).addPath({
+      return new Ingress(this, name, {
+        hostName: config.url(`${name}.${subdomain}`, !!clusterIssuerName),
+        clusterIssuerName,
+      }).addPath({
         path: "/",
         name: svc.name,
         port: port.name ?? port.containerPort,

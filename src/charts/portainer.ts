@@ -6,8 +6,8 @@ import {
 import { Construct } from "constructs";
 import { config } from "~/config";
 import { Chart, ChartProps } from "~/constructs";
+import { Helm } from "~/constructs/helm";
 import { slug } from "~/utils";
-import { ArgoCDChart } from "./argocd";
 
 interface PortainerChartProps extends ChartProps {
   url: string;
@@ -40,14 +40,11 @@ export class PortainerChart extends Chart {
       },
     });
 
-    ArgoCDChart.of(this).helmApp(
-      this,
-      {
-        targetRevision,
-        repoUrl: "https://portainer.github.io/k8s/",
-        chart: "portainer",
-      },
-      {
+    new Helm(this, "portainer", {
+      namespace: props.namespace,
+      chart: "portainer/portainer",
+      releaseName: "portainer",
+      values: {
         service: { type: "ClusterIP" },
         ingress: {
           enabled: true,
@@ -62,7 +59,7 @@ export class PortainerChart extends Chart {
         },
         persistence: { enabled: true, existingClaim: pvc.name },
         tls: { existingSecret: `${slug(url)}-tls` },
-      }
-    );
+      },
+    });
   }
 }

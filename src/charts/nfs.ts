@@ -1,7 +1,7 @@
 import { KubePersistentVolumeClaim, KubeStorageClass, Quantity } from "@/k8s";
 import { Construct } from "constructs";
 import { Chart, ChartProps } from "~/constructs";
-import { ArgoCDChart } from "./argocd";
+import { Helm } from "~/constructs/helm";
 
 const NFS_PROVISIONER_CHART_SYMBOL = Symbol.for(
   "@kube-stack/charts.nfs-provisioner"
@@ -29,15 +29,11 @@ export class NFSChart extends Chart {
     super(scope, id, props);
     Object.defineProperty(this, NFS_PROVISIONER_CHART_SYMBOL, { value: true });
 
-    ArgoCDChart.of(this).helmApp(
-      this,
-      {
-        repoUrl:
-          "https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/",
-        chart: "nfs-subdir-external-provisioner",
-        targetRevision,
-      },
-      {
+    new Helm(this, "nfs-subdir-external-provisioner", {
+      namespace: props.namespace,
+      chart: "nfs-subdir-external-provisioner/nfs-subdir-external-provisioner",
+      releaseName: "nfs-subdir-external-provisioner",
+      values: {
         nfs: {
           path: nfsPath,
           server: nfsServer,
@@ -46,16 +42,16 @@ export class NFSChart extends Chart {
         storageClass: {
           create: false,
         },
-      }
-    );
+      },
+    });
 
-    this.ephemeralSC = this.createSC("nfs-ephemeral", {
+    this.ephemeralSC = this.createSC("ephemeral", {
       archiveOnDelete: "false",
       onDelete: "delete",
       pathPattern: "${.PVC.namespace}/${.PVC.name}",
     });
 
-    this.persistentSC = this.createSC("nfs-persistent", {
+    this.persistentSC = this.createSC("persistent", {
       archiveOnDelete: "false",
       onDelete: "retain",
       pathPattern: "${.PVC.namespace}/${.PVC.name}",

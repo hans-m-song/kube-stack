@@ -4,28 +4,18 @@ import { App } from "cdk8s";
 import { ActionsRunnerControllerChart } from "./charts/arc";
 import { HuiShengChart } from "./charts/huisheng";
 import { DynamicDNSChart } from "./charts/dynamic-dns";
-import { PrefetchChart } from "./charts/prefetch";
-import { HelloWorldChart } from "./charts/hello-world";
 import { CertManagerChart } from "./charts/cert-manager";
-import { config, prefetchImages, registeredUrls } from "./config";
+import { config, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
-import { HomeAssistantChart } from "./charts/hass";
+import { HomeAssistantChart } from "./charts/home-assistant";
 import { PrometheusChart } from "./charts/prometheus";
 import { MQTTChart } from "./charts/mqtt";
-import { RegistryChart } from "./charts/registry";
-import { ArgoCDChart } from "./charts/argocd";
 import { PostgresChart } from "./charts/postgres";
 import { NFSChart } from "./charts/nfs";
 import { MediaChart } from "./charts/media";
 
 const app = new App({ outdir: "manifests" });
-
-new ArgoCDChart(app, "argocd", {
-  url: config.url("argocd.k8s", true),
-  namespace: "argocd",
-  targetRevision: "4.10.5",
-});
 
 const certManagers = new CertManagerChart(app, "cert-manager", {
   namespace: "cert-manager",
@@ -50,12 +40,6 @@ new PrometheusChart(app, "prometheus", {
   targetRevision: "39.4.0",
   clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
-
-// new HelloWorldChart(app, "hello-world", {
-//   namespace: "hello",
-//   url: config.url("hello.k8s", true),
-//   clusterIssuerName: certManagers.clusterIssuerPrd.name,
-// });
 
 new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
@@ -86,12 +70,6 @@ new MongoChart(app, "mongo", {
   url: config.url("mongo.k8s"),
 });
 
-// new RegistryChart(app, "registry", {
-//   namespace: "registry",
-//   url: config.url("registry.k8s", true),
-//   // clusterIssuerName: certManagers.clusterIssuerPrd.name,
-// });
-
 new MQTTChart(app, "mqtt", {
   namespace: "mqtt",
   nodePort: 31883,
@@ -115,17 +93,11 @@ new HuiShengChart(app, "huisheng", {
 
 new MediaChart(app, "media", {
   namespace: "media",
-  url: config.url("media.k8s"),
+  subdomain: "media.k8s",
+  clusterIssuerName: certManagers.clusterIssuerPrd.name,
 });
 
-// these should go last to pick up all the registered values
-
-config.prefetch("public.ecr.aws/axatol/home-assistant-integrations:latest");
-// new PrefetchChart(app, "prefetch", {
-//   namespace: "prefetch",
-//   images: prefetchImages,
-// });
-
+// should go last to pick up all the registered values
 new DynamicDNSChart(app, "ddns", {
   namespace: "ddns",
   targets: registeredUrls,

@@ -9,6 +9,7 @@
     "src:compile": "tsx src/index.ts",
     "types:compile": "tsc --noEmit",
     "synth": "yarn clean && yarn src:compile",
+    "diff": "kubectl diff -f manifests > pending.diff || true",
     "build": "yarn types:compile && yarn synth",
     "lint": "eslint \"src/**/*.ts\"",
     "clean": "rm -rf manifests",

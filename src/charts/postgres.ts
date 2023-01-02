@@ -57,7 +57,7 @@ export class PostgresChart extends Chart {
         },
         {
           name: "pgadmin",
-          image: "dpage/pgadmin4:6.14",
+          image: "dpage/pgadmin4:6.15",
           env: [
             envVarSecretRef(credentials.name, "PGADMIN_DEFAULT_EMAIL"),
             envVarSecretRef(credentials.name, "PGADMIN_DEFAULT_PASSWORD"),

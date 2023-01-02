@@ -1,7 +1,7 @@
 import { Construct } from "constructs";
 import { Chart, ChartProps } from "~/constructs";
+import { Helm } from "~/constructs/helm";
 import { slug } from "~/utils";
-import { ArgoCDChart } from "./argocd";
 
 interface PrometheusChartProps extends ChartProps {
   grafanaUrl: string;
@@ -22,14 +22,11 @@ export class PrometheusChart extends Chart {
   ) {
     super(scope, id, props);
 
-    ArgoCDChart.of(this).helmApp(
-      this,
-      {
-        targetRevision,
-        repoUrl: "https://prometheus-community.github.io/helm-charts",
-        chart: "kube-prometheus-stack",
-      },
-      {
+    new Helm(this, "kube-prometheus-stack", {
+      namespace: props.namespace,
+      chart: "prometheus-community/kube-prometheus-stack",
+      releaseName: "prometheus",
+      values: {
         grafana: {
           ingress: {
             enabled: true,
@@ -49,7 +46,7 @@ export class PrometheusChart extends Chart {
             ],
           },
         },
-      }
-    );
+      },
+    });
   }
 }

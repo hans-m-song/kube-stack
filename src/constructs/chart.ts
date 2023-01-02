@@ -59,6 +59,7 @@ export class Chart extends Cdk8sChart {
     // name without hash
     const name = Names.toDnsLabel(apiObject, { includeHash: false });
     // name without (redundant) object id
-    return name.replace(RegExp(`^${this.node.id}-`), "");
+    // return name.replace(RegExp(`^${this.node.id}-`), "");
+    return name;
   }
 }
