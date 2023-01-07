@@ -89,6 +89,11 @@ export const config = {
     initdbRootUsername: assertEnv("MONGO_INITDB_ROOT_USERNAME"),
   },
 
+  newrelic: {
+    licenseKey: assertEnv("NEWRELIC_LICENSE_KEY"),
+    clusterName: assertEnv("NEWRELIC_CLUSTER_NAME"),
+  },
+
   nfs: {
     serverIP: assertEnv("NFS_SERVER_IP"),
     exportPath: assertEnv("NFS_EXPORT_PATH"),

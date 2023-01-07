@@ -9,11 +9,11 @@ import { config, registeredUrls } from "./config";
 import { MinioChart } from "./charts/minio";
 import { MongoChart } from "./charts/mongo";
 import { HomeAssistantChart } from "./charts/home-assistant";
-import { PrometheusChart } from "./charts/prometheus";
 import { MQTTChart } from "./charts/mqtt";
 import { PostgresChart } from "./charts/postgres";
 import { NFSChart } from "./charts/nfs";
 import { MediaChart } from "./charts/media";
+import { NewRelicChart } from "./charts/newrelic";
 
 const app = new App({ outdir: "manifests" });
 
@@ -34,11 +34,8 @@ new PostgresChart(app, "postgres", {
   url: config.url("psql.k8s"),
 });
 
-new PrometheusChart(app, "prometheus", {
-  namespace: "monitoring",
-  grafanaUrl: config.url("grafana.k8s", true),
-  targetRevision: "39.4.0",
-  clusterIssuerName: certManagers.clusterIssuerPrd.node.id,
+new NewRelicChart(app, "newrelic", {
+  namespace: "newrelic",
 });
 
 new ActionsRunnerControllerChart(app, "arc", {

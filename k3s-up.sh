@@ -34,6 +34,7 @@ sudo chown -R $USER ~/.kube
 helm repo add actions-runner-controller https://actions-runner-controller.github.io/actions-runner-controller
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo add jetstack https://charts.jetstack.io
+helm repo add newrelic https://helm-charts.newrelic.com
 helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
 helm repo add portainer https://portainer.github.io/k8s/
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
