@@ -50,7 +50,6 @@ new ActionsRunnerControllerChart(app, "arc", {
     { repository: "hans-m-song/huisheng" },
     // organisations
     // { organization: "zidle-studio" },
-    { organization: "tunes-anywhere" },
     { organization: "axatol" },
   ],
 });
