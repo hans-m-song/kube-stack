@@ -33,7 +33,12 @@ export const config = {
 
   certManager: {
     email: assertEnv("CERT_MANAGER_EMAIL"),
+    issuerStg: assertEnv("CERT_MANAGER_ISSUER_STG"),
+    issuerPrd: assertEnv("CERT_MANAGER_ISSUER_PRD"),
     awsSecretAccessKey: assertEnv("CERT_MANAGER_AWS_SECRET_ACCESS_KEY"),
+    awsRegion: assertEnv("CERT_MANAGER_AWS_REGION"),
+    awsAccessKeyId: assertEnv("CERT_MANAGER_AWS_ACCESS_KEY_ID"),
+    awsHostedZoneId: assertEnv("CERT_MANAGER_AWS_HOSTED_ZONE_ID"),
   },
 
   ddns: {

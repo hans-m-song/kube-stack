@@ -6,37 +6,17 @@ import {
   ChartProps,
   Deployment,
   Service,
-  volumeHostPath,
+  volumePVC,
 } from "~/constructs";
+import { NFSChart } from "./nfs";
 
 interface MqttChartProps extends ChartProps {
   nodePort: number;
 }
 
 export class MQTTChart extends Chart {
-  deployment = new Deployment(this, "deployment", {
-    selector: { app: "mqtt" },
-    containers: [
-      {
-        name: "mqtt-broker",
-        image: "eclipse-mosquitto",
-        ports: [{ name: "mqtt", containerPort: 1883 }],
-        volumeMounts: [
-          { name: "config", mountPath: "/mosquitto/config" },
-          { name: "data", mountPath: "/mosquitto/data" },
-          { name: "log", mountPath: "/mosquitto/log" },
-        ],
-      },
-    ],
-    volumes: [
-      volumeHostPath("config", config.cache("mqtt/config")),
-      volumeHostPath("data", config.cache("mqtt/data")),
-      volumeHostPath("log", config.cache("mqtt/log")),
-    ],
-  });
-
-  service = this.deployment.getService(this);
-
+  deployment: Deployment;
+  service: Service;
   nodePort: number;
 
   constructor(
@@ -45,6 +25,41 @@ export class MQTTChart extends Chart {
     { nodePort, ...props }: MqttChartProps
   ) {
     super(scope, id, props);
+
+    const nfs = NFSChart.of(this);
+
+    const pvc = nfs.persistentPVC(this, "data", "1Gi");
+
+    this.deployment = new Deployment(this, "deployment", {
+      selector: { app: "mqtt" },
+      containers: [
+        {
+          name: "mqtt-broker",
+          image: "eclipse-mosquitto",
+          ports: [{ name: "mqtt", containerPort: 1883 }],
+          volumeMounts: [
+            {
+              name: "data",
+              mountPath: "/mosquitto/config",
+              subPath: "config",
+            },
+            {
+              name: "data",
+              mountPath: "/mosquitto/data",
+              subPath: "data",
+            },
+            {
+              name: "data",
+              mountPath: "/mosquitto/log",
+              subPath: "log",
+            },
+          ],
+        },
+      ],
+      volumes: [volumePVC("data", pvc.name)],
+    });
+
+    this.service = this.deployment.getService(this);
 
     this.nodePort = nodePort;
 

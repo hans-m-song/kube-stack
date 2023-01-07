@@ -44,18 +44,19 @@ export class CertManagerChart extends Chart {
 
     this.clusterIssuerStg = this.createIssuer(
       "stg",
-      "https://acme-staging-v02.api.letsencrypt.org/directory"
+      config.certManager.issuerStg
     );
 
     this.clusterIssuerPrd = this.createIssuer(
       "prd",
-      "https://acme-v02.api.letsencrypt.org/directory"
+      config.certManager.issuerPrd
     );
   }
 
   private createIssuer(name: string, server: string) {
     const id = `cluster-issuer-${slug(name)}`;
     return new ClusterIssuer(this, id, {
+      metadata: { name: id },
       spec: {
         acme: {
           server,
@@ -65,9 +66,9 @@ export class CertManagerChart extends Chart {
             {
               dns01: {
                 route53: {
-                  region: "ap-southeast-2",
-                  accessKeyId: "AKIATXEPOOLUTMZWBSVC",
-                  hostedZoneId: "Z067173715955IHMKKU3W",
+                  region: config.certManager.awsRegion,
+                  accessKeyId: config.certManager.awsAccessKeyId,
+                  hostedZoneId: config.certManager.awsHostedZoneId,
                   secretAccessKeySecretRef: {
                     name: "aws-credentials",
                     key: "aws_secret_access_key",

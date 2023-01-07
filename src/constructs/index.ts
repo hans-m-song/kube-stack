@@ -9,12 +9,21 @@ export * from "./secret";
 export * from "./service";
 
 export const envVarSecretRef = (
+  /**
+   * name of secret resource
+   */
   secretName: string,
-  key: string,
-  name = key
+  /**
+   * name of key within secret
+   */
+  secretKey: string,
+  /**
+   * name of variable, defaults to `secretKey`
+   */
+  varName = secretKey
 ): EnvVar => ({
-  name,
-  valueFrom: { secretKeyRef: { key, name: secretName } },
+  name: varName,
+  valueFrom: { secretKeyRef: { key: secretKey, name: secretName } },
 });
 
 export const volumeHostPath = (

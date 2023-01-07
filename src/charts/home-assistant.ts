@@ -7,6 +7,7 @@ import {
   ChartProps,
   Deployment,
   envVarSecretRef,
+  ExternalServiceName,
   Ingress,
   Secret,
   volumeHostPath,
@@ -18,7 +19,7 @@ interface HomeAssistantChartProps extends ChartProps {
   url: string;
   mqttUrl: string;
   clusterIssuerName?: string;
-  zigbeeHWBridgeId: string;
+  zigbeeHWBridgeId?: string;
   zigbeeUrl?: string;
 }
 
@@ -46,85 +47,97 @@ export class HomeAssistantChart extends Chart {
       },
     });
 
-    const cacheDir = (subdir: string) =>
-      path.join(config.cache("home-assistant"), subdir);
-
     const eufy = new Deployment(this, "eufy-security", {
       selector: { app: "eufy-security" },
       containers: [
         {
           name: "eufy-security",
-          image: "bropat/eufy-security-ws:0.9.2",
+          image: "bropat/eufy-security-ws:1.3.0",
           ports: [{ name: "ws", containerPort: 3000 }],
           env: [
             { name: "COUNTRY", value: "AU" },
             { name: "DEBUG", value: "1" },
+            { name: "TRUSTED_DEVICE_NAME", value: "DEVICENAME" },
             envVarSecretRef(credentials.name, "EUFY_USERNAME", "USERNAME"),
             envVarSecretRef(credentials.name, "EUFY_PASSWORD", "PASSWORD"),
           ],
         },
-      ],
-    });
-
-    eufy.getService(this);
-
-    const zigbee = new Deployment(this, "zigbee2mqtt", {
-      selector: { app: "zigbee2mqtt" },
-      containers: [
         {
-          name: "zigbee2mqtt",
-          image: "koenkk/zigbee2mqtt:1.28.0",
-          securityContext: {
-            privileged: true,
-            // runAsUser: 20,
-            // runAsGroup: 20, // dialout
-          },
-          env: [
-            { name: "TZ", value: config.tz },
-            { name: "ZIGBEE2MQTT_CONFIG_HOMEASSISTANT", value: "true" },
-            {
-              name: "ZIGBEE2MQTT_CONFIG_MQTT_SERVER",
-              value: "tcp://k8s.axatol.xyz:31883",
-            },
-            { name: "ZIGBEE2MQTT_CONFIG_FRONTEND", value: "true" },
-            { name: "ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER", value: "ezsp" },
-            { name: "ZIGBEE2MQTT_CONFIG_SERIAL_PORT", value: "/dev/ttyACM0" },
-          ],
-          ports: [{ containerPort: 8080 }],
-          volumeMounts: [
-            { name: "data", mountPath: "/app/data" },
-            { name: "zbdongle-e", mountPath: "/dev/ttyACM0" },
-            // { name: "udev", mountPath: "udev" },
+          name: "rtsp-server",
+          image: "aler9/rtsp-simple-server",
+          env: [{ name: "RTSP_PROTOCOLS", value: "tcp" }],
+          ports: [
+            { name: "rtsp", containerPort: 8554 },
+            { name: "rtmp", containerPort: 1935 },
           ],
         },
       ],
-      volumes: [
-        volumePVC(
-          "data",
-          nfs.persistentPVC(this, "zigbee2mqtt-data", "1Gi").name
-        ),
-        volumeHostPath(
-          "zbdongle-e",
-          `/dev/serial/by-id/${zigbeeHWBridgeId}`,
-          ""
-        ),
-        // volumeHostPath("udev", "/run/udev", ""),
-      ],
     });
 
-    zigbeeUrl &&
-      new Ingress(this, "zigbee-ingress", { hostName: zigbeeUrl }).addPath({
-        path: "/",
-        name: zigbee.getService(this).name,
-        port: 8080,
+    ExternalServiceName.fromService(
+      this,
+      "eufy-security-esn",
+      eufy.getService(this)
+    );
+
+    if (zigbeeHWBridgeId) {
+      const zigbee = new Deployment(this, "zigbee2mqtt", {
+        selector: { app: "zigbee2mqtt" },
+        containers: [
+          {
+            name: "zigbee2mqtt",
+            image: "koenkk/zigbee2mqtt:1.28.0",
+            securityContext: { privileged: true },
+            env: [
+              { name: "TZ", value: config.tz },
+              { name: "ZIGBEE2MQTT_CONFIG_HOMEASSISTANT", value: "true" },
+              {
+                name: "ZIGBEE2MQTT_CONFIG_MQTT_SERVER",
+                value: "tcp://k8s.axatol.xyz:31883",
+              },
+              { name: "ZIGBEE2MQTT_CONFIG_FRONTEND", value: "true" },
+              { name: "ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER", value: "ezsp" },
+              {
+                name: "ZIGBEE2MQTT_CONFIG_SERIAL_PORT",
+                value: "/dev/ttyACM0",
+              },
+            ],
+            ports: [{ containerPort: 8080 }],
+            volumeMounts: [
+              { name: "data", mountPath: "/app/data" },
+              { name: "zbdongle-e", mountPath: "/dev/ttyACM0" },
+            ],
+          },
+        ],
+        volumes: [
+          volumePVC(
+            "data",
+            nfs.persistentPVC(this, "zigbee2mqtt-data", "1Gi").name
+          ),
+          volumeHostPath(
+            "zbdongle-e",
+            `/dev/serial/by-id/${zigbeeHWBridgeId}`,
+            ""
+          ),
+        ],
       });
 
+      if (zigbeeUrl) {
+        new Ingress(this, "zigbee-ingress", { hostName: zigbeeUrl }).addPath({
+          path: "/",
+          name: zigbee.getService(this).name,
+          port: 8080,
+        });
+      }
+    }
+
     const deployment = new Deployment(this, "deployment", {
-      selector: { app: `${this.node.id}` },
+      selector: { app: "home-assistant" },
       containers: [
         {
-          name: `${this.node.id}`,
+          name: "home-assistant",
           image: "ghcr.io/home-assistant/home-assistant:stable",
+          imagePullPolicy: "Always",
           ports: [{ name: "console", containerPort: 8123 }],
           volumeMounts: [
             { name: "config", mountPath: "/config" },
@@ -152,20 +165,12 @@ export class HomeAssistantChart extends Chart {
             },
           },
         },
-
-        // addons
-        {
-          name: "rtsp-server",
-          image: "aler9/rtsp-simple-server",
-          env: [{ name: "RTSP_PROTOCOLS", value: "tcp" }],
-          ports: [
-            { name: "rtsp", containerPort: 8554 },
-            { name: "rtmp", containerPort: 1935 },
-          ],
-        },
       ],
       volumes: [
-        volumeHostPath("config", cacheDir("config")),
+        volumePVC(
+          "config",
+          nfs.persistentPVC(this, "home-assistant-config", "1Gi").name
+        ),
         { name: "localtime", hostPath: { path: "/etc/localtime" } },
       ],
     });

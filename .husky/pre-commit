@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-git secret hide
+if [ $(cat .gitsecret/paths/mapping.cfg | sed 's/:.*$//' | wc -l) -gt 0 ]; then
+  git secret hide
+fi
