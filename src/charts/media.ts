@@ -132,8 +132,8 @@ export class MediaChart extends Chart {
       }
 
       return new Ingress(this, name, {
-        hostName: config.url(`${name}.${subdomain}`, !!clusterIssuerName),
-        clusterIssuerName,
+        hostName: config.url(`${name}.${subdomain}`),
+        // clusterIssuerName,
       }).addPath({
         path: "/",
         name: svc.name,

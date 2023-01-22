@@ -2,12 +2,15 @@ name: Build Runner
 
 on:
   workflow_dispatch:
+  schedule:
+    # once a month
+    - cron: "0 0 1 * *"
 
   push:
     branches:
       - master
     paths:
-      - 'runner/**'
+      - "runner/**"
       - .github/workflows/build-runner.yaml
       - .github/workflows/runner-tool-cache.yaml
 

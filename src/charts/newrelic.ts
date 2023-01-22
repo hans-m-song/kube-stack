@@ -10,16 +10,18 @@ export class NewRelicChart extends Chart {
     new Helm(this, "nri-bundle", {
       namespace: props.namespace,
       chart: "newrelic/nri-bundle",
+      version: "5.0.2",
       values: {
         global: {
           licenseKey: config.newrelic.licenseKey,
           cluster: config.newrelic.clusterName,
+          lowDataMode: true,
         },
         "kube-state-metrics": {
-          enabled: true,
+          enabled: false,
         },
         "newrelic-infrastructure": {
-          priviledged: true,
+          privileged: true,
         },
         "newrelic-logging": {
           enabled: true,
@@ -31,7 +33,7 @@ export class NewRelicChart extends Chart {
           enabled: true,
         },
         "nri-prometheus": {
-          enabled: true,
+          enabled: false,
         },
       },
     });

@@ -1,4 +1,4 @@
 language: typescript
-app: node dist/index.js
+app: tsx src/index.ts
 imports:
-  - k8s
+  - k8s@1.24.0

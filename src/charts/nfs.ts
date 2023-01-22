@@ -8,7 +8,7 @@ const NFS_PROVISIONER_CHART_SYMBOL = Symbol.for(
 );
 
 export interface NFSProvisionerChartProps extends ChartProps {
-  targetRevision: string;
+  helmVersion: string;
   nfsServer: string;
   nfsPath: string;
 }
@@ -24,7 +24,7 @@ export class NFSChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { targetRevision, nfsServer, nfsPath, ...props }: NFSProvisionerChartProps
+    { helmVersion, nfsServer, nfsPath, ...props }: NFSProvisionerChartProps
   ) {
     super(scope, id, props);
     Object.defineProperty(this, NFS_PROVISIONER_CHART_SYMBOL, { value: true });
@@ -33,6 +33,7 @@ export class NFSChart extends Chart {
       namespace: props.namespace,
       chart: "nfs-subdir-external-provisioner/nfs-subdir-external-provisioner",
       releaseName: "nfs-subdir-external-provisioner",
+      version: helmVersion,
       values: {
         nfs: {
           path: nfsPath,

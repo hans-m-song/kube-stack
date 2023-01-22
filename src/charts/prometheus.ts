@@ -5,7 +5,7 @@ import { slug } from "~/utils";
 
 interface PrometheusChartProps extends ChartProps {
   grafanaUrl: string;
-  targetRevision: string;
+  helmVersion: string;
   clusterIssuerName?: string;
 }
 
@@ -14,7 +14,7 @@ export class PrometheusChart extends Chart {
     scope: Construct,
     id: string,
     {
-      targetRevision,
+      helmVersion,
       grafanaUrl,
       clusterIssuerName,
       ...props
@@ -26,6 +26,7 @@ export class PrometheusChart extends Chart {
       namespace: props.namespace,
       chart: "prometheus-community/kube-prometheus-stack",
       releaseName: "prometheus",
+      version: helmVersion,
       values: {
         grafana: {
           ingress: {

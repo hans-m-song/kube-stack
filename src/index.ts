@@ -19,12 +19,12 @@ const app = new App({ outdir: "manifests" });
 
 const certManagers = new CertManagerChart(app, "cert-manager", {
   namespace: "cert-manager",
-  targetRevision: "v1.9.1",
+  helmVersion: "v1.10.0",
 });
 
 new NFSChart(app, "nfs", {
   namespace: "kube-system",
-  targetRevision: "4.0.17",
+  helmVersion: "4.0.17",
   nfsServer: config.nfs.serverIP,
   nfsPath: config.nfs.exportPath,
 });
@@ -42,7 +42,7 @@ new ActionsRunnerControllerChart(app, "arc", {
   namespace: "actions-runner-system",
   clusterIssuerName: certManagers.clusterIssuerPrd.node.id,
   webhookUrl: config.url("arc.k8s", true),
-  targetRevision: "0.21.0",
+  helmVersion: "0.22.0",
   targets: [
     // repos
     // { repository: "hans-m-song/docker" },
@@ -51,6 +51,7 @@ new ActionsRunnerControllerChart(app, "arc", {
     // organisations
     // { organization: "zidle-studio" },
     { organization: "axatol" },
+    { organization: "songmatrix" },
   ],
 });
 

@@ -11,7 +11,7 @@ import { slug } from "~/utils";
 
 interface PortainerChartProps extends ChartProps {
   url: string;
-  targetRevision: string;
+  helmVersion: string;
   clusterIssuerName?: string;
 }
 
@@ -19,7 +19,7 @@ export class PortainerChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { url, targetRevision, clusterIssuerName, ...props }: PortainerChartProps
+    { url, helmVersion, clusterIssuerName, ...props }: PortainerChartProps
   ) {
     super(scope, id, props);
 
@@ -44,6 +44,7 @@ export class PortainerChart extends Chart {
       namespace: props.namespace,
       chart: "portainer/portainer",
       releaseName: "portainer",
+      version: helmVersion,
       values: {
         service: { type: "ClusterIP" },
         ingress: {

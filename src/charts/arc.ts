@@ -1,6 +1,7 @@
 import { Construct } from "constructs";
 import {
   HorizontalRunnerAutoscaler,
+  HorizontalRunnerAutoscalerSpecScaleTargetRefKind,
   RunnerDeployment,
 } from "@/actions.summerwind.dev";
 import { config } from "~/config";
@@ -9,9 +10,13 @@ import { NFSChart } from "./nfs";
 import { Helm } from "~/constructs/helm";
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
-  targets: { organization?: string; repository?: string }[];
+  targets: {
+    organization?: string;
+    repository?: string;
+    maxReplicas?: number;
+  }[];
   webhookUrl: string;
-  targetRevision: string;
+  helmVersion: string;
   clusterIssuerName?: string;
 }
 
@@ -22,7 +27,7 @@ export class ActionsRunnerControllerChart extends Chart {
     {
       targets,
       webhookUrl,
-      targetRevision,
+      helmVersion,
       clusterIssuerName,
       ...props
     }: ActionsRunnerControllerChartProps
@@ -35,23 +40,10 @@ export class ActionsRunnerControllerChart extends Chart {
       namespace: props.namespace,
       chart: "actions-runner-controller/actions-runner-controller",
       releaseName: "actions-runner-controller",
+      version: helmVersion,
       values: {
         authSecret: { create: true, github_token: config.arc.githubPAT },
         githubWebhookServer: { enabled: true },
-      },
-    });
-
-    new HorizontalRunnerAutoscaler(this, "horizontalrunnerautoscaler", {
-      spec: {
-        minReplicas: 0,
-        maxReplicas: targets.length * 2,
-        scaleUpTriggers: [
-          {
-            githubEvent: { workflowJob: {} },
-            amount: 1,
-            duration: "5m",
-          },
-        ],
       },
     });
 
@@ -73,7 +65,7 @@ export class ActionsRunnerControllerChart extends Chart {
       accessModes: ["ReadWriteMany"],
     });
 
-    targets.map(({ organization, repository }) => {
+    targets.map(({ organization, repository, maxReplicas = 3 }) => {
       if ((!organization && !repository) || (organization && repository)) {
         throw new Error(
           "must specify exactly one of 'organization' or 'repository'"
@@ -81,13 +73,14 @@ export class ActionsRunnerControllerChart extends Chart {
       }
 
       const id = (organization ?? repository ?? "").replace(/\//g, "-");
-      return new RunnerDeployment(this, `${id}-rd`, {
+      const runnerDeployment = new RunnerDeployment(this, `${id}-rd`, {
         spec: {
           template: {
             spec: {
               dockerMtu: 1400,
               dockerdWithinRunnerContainer: true,
               image: config.prefetch("public.ecr.aws/axatol/gha-runner:latest"),
+              imagePullPolicy: "Always",
               organization,
               repository,
               env: [
@@ -115,7 +108,10 @@ export class ActionsRunnerControllerChart extends Chart {
                 },
               ],
               volumeMounts: [
-                { name: "tool-cache", mountPath: "/opt/hostedtoolcache" },
+                {
+                  name: "tool-cache",
+                  mountPath: "/opt/hostedtoolcache",
+                },
                 {
                   name: "module-cache",
                   mountPath: "/home/runner/.cache",
@@ -127,6 +123,24 @@ export class ActionsRunnerControllerChart extends Chart {
               ],
             },
           },
+        },
+      });
+
+      new HorizontalRunnerAutoscaler(this, `${id}-hra`, {
+        spec: {
+          minReplicas: 0,
+          maxReplicas,
+          scaleTargetRef: {
+            kind: HorizontalRunnerAutoscalerSpecScaleTargetRefKind.RUNNER_DEPLOYMENT,
+            name: runnerDeployment.name,
+          },
+          scaleUpTriggers: [
+            {
+              githubEvent: { workflowJob: {} },
+              amount: 1,
+              duration: "5m",
+            },
+          ],
         },
       });
     });

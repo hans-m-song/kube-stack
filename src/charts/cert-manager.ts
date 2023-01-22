@@ -8,7 +8,7 @@ import { Helm } from "~/constructs/helm";
 const CERT_MANAGER_CHART_SYMBOL = Symbol.for("@kube-stack/charts.cert-manager");
 
 export interface CertManagerChartProps extends ChartProps {
-  targetRevision: string;
+  helmVersion: string;
 }
 
 export class CertManagerChart extends Chart {
@@ -25,7 +25,7 @@ export class CertManagerChart extends Chart {
   constructor(
     scope: Construct,
     id: string,
-    { targetRevision, ...props }: CertManagerChartProps
+    { helmVersion, ...props }: CertManagerChartProps
   ) {
     super(scope, id, props);
     Object.defineProperty(this, CERT_MANAGER_CHART_SYMBOL, { value: true });
@@ -34,6 +34,7 @@ export class CertManagerChart extends Chart {
       namespace: props.namespace,
       chart: "jetstack/cert-manager",
       releaseName: "cert-manager",
+      version: helmVersion,
       values: { installCRDs: true },
     });
 
