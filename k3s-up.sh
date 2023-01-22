@@ -57,10 +57,10 @@ helm upgrade argocd argo/argo-cd \
   --wait
 
 # download argocd cli
-if [ ! -f ./bin/argocd ]; then
-  curl -sSL -o ./bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-  chmod +x ./bin/argocd
-fi
+# if [ ! -f ./bin/argocd ]; then
+#   curl -sSL -o ./bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+#   chmod +x ./bin/argocd
+# fi
 
 # download kubernetes kind filter
 if [ ! -f ./bin/kfilt ]; then
