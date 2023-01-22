@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 summerwind/actions-runner-dind:ubuntu-20.04 
+FROM --platform=linux/amd64 summerwind/actions-runner-dind:ubuntu-22.04 
 
 # SHELL ["/bin/bash", "--login", "-c"]
 WORKDIR $HOME
@@ -11,7 +11,8 @@ RUN sudo apt-get update \
   less \
   libssl-dev \
   xz-utils \
-  && sudo rm -rf /var/lib/apt/lists/*
+  && sudo rm -rf /var/lib/apt/lists/* \
+  && sudo apt clean
 
 # aws cli
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscli.zip" \
