@@ -79,7 +79,9 @@ export class ActionsRunnerControllerChart extends Chart {
             spec: {
               dockerMtu: 1400,
               dockerdWithinRunnerContainer: true,
-              image: config.prefetch("public.ecr.aws/axatol/gha-runner:latest"),
+              image: config.prefetch(
+                "public.ecr.aws/axatol/github-actions-runner:latest"
+              ),
               imagePullPolicy: "Always",
               organization,
               repository,
