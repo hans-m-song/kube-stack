@@ -51,7 +51,10 @@ new ActionsRunnerControllerChart(app, "arc", {
     // organisations
     // { organization: "zidle-studio" },
     { organization: "axatol" },
-    { organization: "songmatrix" },
+    {
+      organization: "songmatrix",
+      authorizedNamespaces: ["songmatrix"],
+    },
   ],
 });
 

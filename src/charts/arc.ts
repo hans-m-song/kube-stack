@@ -85,27 +85,31 @@ export class ActionsRunnerControllerChart extends Chart {
 
       const id = (organization ?? repository ?? "").replace(/\//g, "-");
 
-      const serviceAccount =
-        authorizedNamespaces && new KubeServiceAccount(this, `${id}-sa`);
+      const serviceAccount = new KubeServiceAccount(this, `${id}-sa`);
 
-      serviceAccount &&
-        authorizedNamespaces?.forEach((namespace) => {
-          const sa = new KubeServiceAccount(this, `${namespace}-${id}-sa`, {
-            metadata: { name: serviceAccount.name, namespace },
-          });
-
-          new KubeRoleBinding(this, `${serviceAccount.node.id}-rb`, {
-            metadata: { namespace },
-            roleRef: { apiGroup: "", kind: "ClusterRole", name: "edit" },
-            subjects: [{ kind: "ServiceAccount", name: sa.name }],
-          });
+      authorizedNamespaces?.forEach((namespace) => {
+        new KubeRoleBinding(this, `${serviceAccount.node.id}-rb`, {
+          metadata: { namespace },
+          roleRef: {
+            apiGroup: "",
+            kind: "ClusterRole",
+            name: "edit",
+          },
+          subjects: [
+            {
+              kind: "ServiceAccount",
+              name: serviceAccount.name,
+              namespace: this.namespace,
+            },
+          ],
         });
+      });
 
       const runnerDeployment = new RunnerDeployment(this, `${id}-rd`, {
         spec: {
           template: {
             spec: {
-              serviceAccountName: serviceAccount?.name,
+              serviceAccountName: serviceAccount.name,
               dockerMtu: 1400,
               dockerdWithinRunnerContainer: true,
               image: config.prefetch(

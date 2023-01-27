@@ -37,6 +37,7 @@ jobs:
       - uses: axatol/actions/docker-build-push@release
         with:
           image: public.ecr.aws/axatol/github-actions-runner
+          build-context: ./runner
 
   tools:
     name: Populate runner tool cache
