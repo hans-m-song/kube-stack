@@ -8,13 +8,17 @@ import { config } from "~/config";
 import { Chart, ChartProps, Ingress, volumePVC } from "~/constructs";
 import { NFSChart } from "./nfs";
 import { Helm } from "~/constructs/helm";
+import { KubeRoleBinding, KubeServiceAccount } from "@/k8s";
+
+export interface RunnerTarget {
+  organization?: string;
+  repository?: string;
+  maxReplicas?: number;
+  authorizedNamespaces?: string[];
+}
 
 export interface ActionsRunnerControllerChartProps extends ChartProps {
-  targets: {
-    organization?: string;
-    repository?: string;
-    maxReplicas?: number;
-  }[];
+  targets: RunnerTarget[];
   webhookUrl: string;
   helmVersion: string;
   clusterIssuerName?: string;
@@ -65,7 +69,14 @@ export class ActionsRunnerControllerChart extends Chart {
       accessModes: ["ReadWriteMany"],
     });
 
-    targets.map(({ organization, repository, maxReplicas = 3 }) => {
+    targets.map((target) => {
+      const {
+        organization,
+        repository,
+        maxReplicas = 3,
+        authorizedNamespaces,
+      } = target;
+
       if ((!organization && !repository) || (organization && repository)) {
         throw new Error(
           "must specify exactly one of 'organization' or 'repository'"
@@ -73,10 +84,28 @@ export class ActionsRunnerControllerChart extends Chart {
       }
 
       const id = (organization ?? repository ?? "").replace(/\//g, "-");
+
+      const serviceAccount =
+        authorizedNamespaces && new KubeServiceAccount(this, `${id}-sa`);
+
+      serviceAccount &&
+        authorizedNamespaces?.forEach((namespace) => {
+          const sa = new KubeServiceAccount(this, `${namespace}-${id}-sa`, {
+            metadata: { name: serviceAccount.name, namespace },
+          });
+
+          new KubeRoleBinding(this, `${serviceAccount.node.id}-rb`, {
+            metadata: { namespace },
+            roleRef: { apiGroup: "", kind: "ClusterRole", name: "edit" },
+            subjects: [{ kind: "ServiceAccount", name: sa.name }],
+          });
+        });
+
       const runnerDeployment = new RunnerDeployment(this, `${id}-rd`, {
         spec: {
           template: {
             spec: {
+              serviceAccountName: serviceAccount?.name,
               dockerMtu: 1400,
               dockerdWithinRunnerContainer: true,
               image: config.prefetch(
