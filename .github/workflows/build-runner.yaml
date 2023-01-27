@@ -14,10 +14,6 @@ on:
       - .github/workflows/build-runner.yaml
       - .github/workflows/runner-tool-cache.yaml
 
-env:
-  REGISTRY: public.ecr.aws/axatol
-  REPOSITORY: github-actions-runner
-
 jobs:
   build:
     name: Build
@@ -38,28 +34,13 @@ jobs:
         with:
           registry-type: public
 
-      - name: Retrieve and tag last image
-        env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-        run: |
-          docker pull $IMAGE:latest
-          docker tag $IMAGE:latest $IMAGE:previous
-          docker push $IMAGE:previous
-
-      - name: Build new image
-        env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-        run: |
-          docker build --tag $IMAGE:latest --cache-from $IMAGE:previous ./runner
-          docker push $IMAGE:latest
-
-      - uses: hans-m-song/actions/prune-ecr-repository@master
+      - uses: axatol/actions/docker-build-push@release
         with:
-          aws-access-key-id: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
-          repository-name: ${{ env.REPOSITORY }}
+          image: public.ecr.aws/axatol/github-actions-runner
 
   tools:
+    name: Populate runner tool cache
+
     needs:
       - build
 
