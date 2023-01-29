@@ -45,7 +45,7 @@ new ActionsRunnerControllerChart(app, "arc", {
   helmVersion: "0.22.0",
   targets: [
     // repos
-    // { repository: "hans-m-song/docker" },
+    { repository: "hans-m-song/iac" },
     { repository: "hans-m-song/kube-stack" },
     { repository: "hans-m-song/huisheng" },
     // organisations
