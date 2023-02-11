@@ -9,6 +9,7 @@ import { Chart, ChartProps, Ingress, volumePVC } from "~/constructs";
 import { NFSChart } from "./nfs";
 import { Helm } from "~/constructs/helm";
 import { KubeRoleBinding, KubeServiceAccount } from "@/k8s";
+import path from "path";
 
 export interface RunnerTarget {
   organization?: string;
@@ -105,6 +106,11 @@ export class ActionsRunnerControllerChart extends Chart {
         });
       });
 
+      const cacheDir = (subdir?: string) => {
+        const dir = "/home/runner/.cache";
+        return subdir ? path.join(dir, subdir) : dir;
+      };
+
       const runnerDeployment = new RunnerDeployment(this, `${id}-rd`, {
         spec: {
           template: {
@@ -119,38 +125,19 @@ export class ActionsRunnerControllerChart extends Chart {
               organization,
               repository,
               env: [
-                {
-                  name: "DISABLE_RUNNER_UPDATE",
-                  value: "true",
-                },
+                // runner
+                // { name: "ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT", value: "true" },
+                { name: "DISABLE_RUNNER_UPDATE", value: "true" },
                 // go
-                {
-                  name: "GOPATH",
-                  value: "/home/runner/.cache/go",
-                },
-                {
-                  name: "GOMODCACHE",
-                  value: "/home/runner/.cache/go/pkg/mod",
-                },
+                { name: "GOPATH", value: cacheDir("go") },
+                { name: "GOMODCACHE", value: cacheDir("go/pkg/mod") },
                 // node
-                {
-                  name: "npm_config_cache",
-                  value: "/home/runner/.cache/npm",
-                },
-                {
-                  name: "YARN_CACHE_FOLDER",
-                  value: "/home/runner/.cache/yarn",
-                },
+                { name: "npm_config_cache", value: cacheDir("npm") },
+                { name: "YARN_CACHE_FOLDER", value: cacheDir("yarn") },
               ],
               volumeMounts: [
-                {
-                  name: "tool-cache",
-                  mountPath: "/opt/hostedtoolcache",
-                },
-                {
-                  name: "module-cache",
-                  mountPath: "/home/runner/.cache",
-                },
+                { name: "tool-cache", mountPath: "/opt/hostedtoolcache" },
+                { name: "module-cache", mountPath: cacheDir() },
               ],
               volumes: [
                 volumePVC("tool-cache", toolPVC.name),

@@ -47,14 +47,12 @@ new ActionsRunnerControllerChart(app, "arc", {
     // repos
     { repository: "hans-m-song/iac" },
     { repository: "hans-m-song/kube-stack" },
-    { repository: "hans-m-song/huisheng" },
+    { repository: "hans-m-song/huisheng", authorizedNamespaces: ["huisheng"] },
+    { repository: "hans-m-song/saml2aws" },
     // organisations
     // { organization: "zidle-studio" },
-    { organization: "axatol" },
-    {
-      organization: "songmatrix",
-      authorizedNamespaces: ["songmatrix"],
-    },
+    { organization: "axatol", authorizedNamespaces: ["yt-dlp-ui"] },
+    { organization: "songmatrix", authorizedNamespaces: ["songmatrix"] },
   ],
 });
 
