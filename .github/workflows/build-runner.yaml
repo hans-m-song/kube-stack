@@ -26,8 +26,11 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ECR_IMAGE_PUBLISHER_ROLE_ARN }}
+          role-session-name: hans-m-song_kube-stack_build-runner
+          aws-region: ap-southeast-2
+          role-skip-session-tagging: true
+          role-duration-seconds: 3600
 
       - uses: aws-actions/amazon-ecr-login@v1
         with:
