@@ -18,6 +18,9 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  image: public.ecr.aws/axatol/github-actions-runner
+
 jobs:
   build:
     name: Build
@@ -32,7 +35,7 @@ jobs:
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ECR_IMAGE_PUBLISHER_ROLE_ARN }}
-          role-session-name: hans-m-song_kube-stack_build-runner
+          role-session-name: ${{ github.triggering_actor }}-kube-stack-${{ github.job }}-${{ github.run_id }}
           role-skip-session-tagging: true
           role-duration-seconds: 3600
 
@@ -42,8 +45,12 @@ jobs:
 
       - uses: axatol/actions/docker-build-push@release
         with:
-          image: public.ecr.aws/axatol/github-actions-runner
+          image: ${{ env.image }}
           build-context: ./runner
+
+      - uses: axatol/actions/prune-ecr-repository@release
+        with:
+          repository-name: ${{ env.image }}
 
   tools:
     name: Populate runner tool cache
