@@ -6,8 +6,9 @@ import {
   Deployment,
   ExternalServiceName,
   Secret,
-  volumeHostPath,
+  volumePVC,
 } from "~/constructs";
+import { NFSChart } from "./nfs";
 
 export interface HuiShengChartProps extends ChartProps {
   minioServiceName: string;
@@ -21,6 +22,7 @@ export class HuiShengChart extends Chart {
     { minioServiceName, botPrefix, ...props }: HuiShengChartProps
   ) {
     super(scope, id, props);
+    const nfs = NFSChart.of(this);
     const selector = { app: "huisheng" };
 
     const credentials = new Secret(this, "credentials", {
@@ -57,7 +59,9 @@ export class HuiShengChart extends Chart {
           volumeMounts: [{ name: "data", mountPath: "/data" }],
         },
       ],
-      volumes: [volumeHostPath("data", config.cache("huisheng"))],
+      volumes: [
+        volumePVC("data", nfs.persistentPVC(this, "huisheng-data", "5Gi").name),
+      ],
     });
   }
 }

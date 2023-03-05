@@ -36,6 +36,7 @@ new PostgresChart(app, "postgres", {
 
 new NewRelicChart(app, "newrelic", {
   namespace: "newrelic",
+  helmVersion: "5.0.2",
 });
 
 new ActionsRunnerControllerChart(app, "arc", {

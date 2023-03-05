@@ -3,14 +3,22 @@ import { config } from "~/config";
 import { Chart, ChartProps } from "~/constructs";
 import { Helm } from "~/constructs/helm";
 
+export interface NewRelicChartProps extends ChartProps {
+  helmVersion: string;
+}
+
 export class NewRelicChart extends Chart {
-  constructor(scope: Construct, id: string, props: ChartProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    { helmVersion, ...props }: NewRelicChartProps
+  ) {
     super(scope, id, props);
 
     new Helm(this, "nri-bundle", {
       namespace: props.namespace,
       chart: "newrelic/nri-bundle",
-      version: "5.0.2",
+      version: helmVersion,
       values: {
         global: {
           licenseKey: config.newrelic.licenseKey,
