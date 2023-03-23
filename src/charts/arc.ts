@@ -89,7 +89,7 @@ export class ActionsRunnerControllerChart extends Chart {
       const serviceAccount = new KubeServiceAccount(this, `${id}-sa`);
 
       authorizedNamespaces?.forEach((namespace) => {
-        new KubeRoleBinding(this, `${serviceAccount.node.id}-rb`, {
+        new KubeRoleBinding(this, `${serviceAccount.node.id}-${namespace}-rb`, {
           metadata: { namespace },
           roleRef: {
             apiGroup: "",
