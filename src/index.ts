@@ -52,7 +52,7 @@ new ActionsRunnerControllerChart(app, "arc", {
     { repository: "hans-m-song/saml2aws" },
     // organisations
     // { organization: "zidle-studio" },
-    { organization: "axatol", authorizedNamespaces: ["yt-dlp-ui"] },
+    { organization: "axatol", authorizedNamespaces: ["yt-dlp-ui", "jayd"] },
     { organization: "songmatrix", authorizedNamespaces: ["songmatrix"] },
   ],
 });

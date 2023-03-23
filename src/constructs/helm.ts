@@ -15,7 +15,7 @@ export class Helm extends Cdk8sHelm {
       ...props,
       helmFlags: [
         ...(props.helmFlags ?? []),
-        ...(namespace ? ["--namespace", namespace] : []),
+        ...(namespace ? ["--namespace", namespace, "--create-namespace"] : []),
       ],
     });
   }

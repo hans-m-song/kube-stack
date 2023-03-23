@@ -26,7 +26,7 @@ export class NewRelicChart extends Chart {
           lowDataMode: true,
         },
         "kube-state-metrics": {
-          enabled: false,
+          enabled: true,
         },
         "newrelic-infrastructure": {
           privileged: true,
