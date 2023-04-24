@@ -6,6 +6,7 @@ WORKDIR $HOME
 RUN sudo apt-get update \
   && sudo apt-get install -y --no-install-recommends \
   apt-transport-https \
+  build-essential \
   ca-certificates \
   curl \
   groff \
