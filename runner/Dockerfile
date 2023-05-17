@@ -42,3 +42,8 @@ RUN sudo curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/m
   && sudo chmod +x get_helm.sh \
   && ./get_helm.sh \
   && sudo rm ./get_helm.sh
+
+ARG HELMFILE_VERSION="0.153.1"
+RUN sudo curl -fsSL https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz \
+  | tar -xz helmfile \
+  && sudo mv ./helmfile /usr/local/bin/helmfile
